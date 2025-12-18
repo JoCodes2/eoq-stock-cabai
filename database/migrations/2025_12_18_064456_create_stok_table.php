@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supplier_offers', function (Blueprint $table) {
+        Schema::create('stok', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('request_id')->constrained('requests')->cascadeOnDelete();
-            $table->foreignUuid('supplier_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('status', ['pending', 'selected'])->default('pending');
+            $table->foreignUuid('jenis_id')->constrained('jenis_cabai')->cascadeOnDelete();
+            $table->decimal('jumlah');
+            $table->decimal('stok_minimum');
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('supplier_offers');
+        Schema::dropIfExists('stok');
     }
 };

@@ -33,10 +33,10 @@
                         <div data-i18n="Analytics">Pengguna</div>
                     </a>
                 </li>
-                <li class="menu-item {{ request()->is('product') ? 'active' : '' }}">
-                    <a href="/product" class="menu-link">
+                <li class="menu-item {{ request()->is('master-data') ? 'active' : '' }}">
+                    <a href="/master-data" class="menu-link">
                         <i class="menu-icon fa-solid fa-box"></i>
-                        <div data-i18n="Analytics">Produk</div>
+                        <div data-i18n="Analytics">Master Data</div>
                     </a>
                 </li>
 
