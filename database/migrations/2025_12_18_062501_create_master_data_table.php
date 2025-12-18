@@ -16,8 +16,9 @@ return new class extends Migration
             $table->string('kode');
             $table->string('nama');
             $table->string('satuan')->default('kg');
-            $table->decimal('jumlah');
-            $table->decimal('stok_minimum');
+            $table->decimal('jumlah')->default(0);
+            $table->decimal('stok_minimum')->default(0);
+
             $table->boolean('is_aktif')->default(true);
             $table->timestamps();
         });

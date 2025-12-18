@@ -12,7 +12,7 @@
         <div class="card-body py-2">
             <div class="py-3">
                 <h6>Daftar Produk</h6>
-                <table id="dataProduct" class="table table-bordered table-striped">
+                <table id="dataMaster" class="table table-bordered table-striped">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -44,16 +44,16 @@
                         <input type="hidden" id="id" name="id">
                         <!-- Input Nama Produk -->
                         <div class="mb-3">
-                            <label for="product_name" class="form-label">Nama Produk</label>
-                            <input type="text" id="product_name" name="product_name" class="form-control">
-                            <small id="product_name-error" class="text-danger"></small>
+                            <label for="nama" class="form-label">Nama Produk</label>
+                            <input type="text" id="nama" name="nama" class="form-control">
+                            <small id="nama-error" class="text-danger"></small>
                         </div>
 
                         <!-- Input Satuan -->
                         <div class="mb-3">
-                            <label for="unit" class="form-label">Satuan</label>
-                            <input type="text" id="unit" name="unit" class="form-control">
-                            <small id="unit-error" class="text-danger"></small>
+                            <label for="satuan" class="form-label">Satuan</label>
+                            <input type="text" id="satuan" name="satuan" class="form-control">
+                            <small id="satuan-error" class="text-danger"></small>
                         </div>
 
                     </div>
@@ -75,7 +75,7 @@
             // Ambil data produk
             function getData() {
                 $.ajax({
-                    url: `/v1/product`,
+                    url: `/v1/master`,
                     method: "GET",
                     dataType: "json",
                     success: function(response) {
@@ -83,8 +83,8 @@
                         $.each(response.data, function(index, item) {
                             tableBody += "<tr>";
                             tableBody += "<td>" + (index + 1) + "</td>";
-                            tableBody += "<td>" + item.product_name + "</td>";
-                            tableBody += "<td>" + item.unit + "</td>";
+                            tableBody += "<td>" + item.nama + "</td>";
+                            tableBody += "<td>" + item.satuan + "</td>";
                             tableBody += "<td>";
                             tableBody +=
                                 "<button type='button' class='btn btn-outline-primary btn-sm edit-btn' data-id='" +
@@ -96,9 +96,9 @@
                             tableBody += "</tr>";
                         });
 
-                        $("#dataProduct tbody").html(tableBody);
+                        $("#dataMaster tbody").html(tableBody);
 
-                        $('#dataProduct').DataTable({
+                        $('#dataMaster').DataTable({
                             destroy: true,
                             paging: true,
                             searching: true,
@@ -122,7 +122,7 @@
 
                 let id = $('#id').val();
                 let formData = new FormData($('#upsertDataForm')[0]);
-                let url = id ? `/v1/product/update/${id}` : '/v1/product/create';
+                let url = id ? `/v1/master/update/${id}` : '/v1/master/create';
                 let method = id ? 'POST' : 'POST';
 
                 loadingAllert();
@@ -161,7 +161,7 @@
             $(document).on('click', '.edit-btn', function() {
                 let id = $(this).data('id');
                 $.ajax({
-                    url: `/v1/product/get/${id}`,
+                    url: `/v1/master/get/${id}`,
                     method: "GET",
                     dataType: "json",
                     success: function(response) {
@@ -170,8 +170,8 @@
 
                         // Populate form fields with existing data
                         $('#id').val(response.data.id);
-                        $('#product_name').val(response.data.product_name);
-                        $('#unit').val(response.data.unit);
+                        $('#nama').val(response.data.nama);
+                        $('#satuan').val(response.data.satuan);
 
                     },
                     error: function(xhr, status, error) {
@@ -188,7 +188,7 @@
                 function deleteData() {
                     $.ajax({
                         type: 'DELETE',
-                        url: `/v1/product/delete/${id}`,
+                        url: `/v1/master/delete/${id}`,
                         dataType: 'json',
                         success: function(response) {
                             console.log(response);

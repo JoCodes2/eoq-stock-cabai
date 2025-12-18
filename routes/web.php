@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CMS\AuthController;
 use App\Http\Controllers\CMS\DashboardController;
+use App\Http\Controllers\CMS\MasterController;
 use App\Http\Controllers\CMS\ProductController;
 use App\Http\Controllers\CMS\RequestOilController;
 use App\Http\Controllers\CMS\RequestSupplyController;
@@ -23,20 +24,14 @@ Route::get('/user', function () {
 Route::prefix('v1')->group(function () {
 
     // // route  api  //
-    // Route::prefix('product')->controller(ProductController::class)->group(function () {
-    //     Route::get('/', 'getAllData');
-    //     Route::post('/create', 'createData');
-    //     Route::get('/get/{id}', 'getDataById');
-    //     Route::post('/update/{id}', 'updateDataById');
-    //     Route::delete('/delete/{id}', 'deleteDataById');
-    // });
+    Route::prefix('master')->controller(MasterController::class)->group(function () {
+        Route::get('/', 'getAllData');
+        Route::post('/create', 'createData');
+        Route::get('/get/{id}', 'getDataById');
+        Route::post('/update/{id}', 'updateDataById');
+        Route::delete('/delete/{id}', 'deleteDataById');
+    });
 
-    // Route::prefix('oil')->controller(RequestOilController::class)->group(function () {
-    //     Route::get('/', 'getAllData');
-    //     Route::delete('/delete/{id}', 'deleteData');
-    //     Route::post('/change/{id}', 'changeStatus');
-    //     Route::get('/filter', 'filter');
-    // });
 
     Route::prefix('user')->controller(UserController::class)->group(function () {
         Route::get('/', 'getAllData');
