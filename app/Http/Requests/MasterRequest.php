@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 
-class ProductRequest extends FormRequest
+class MasterRequest extends FormRequest
 {
 
     public function authorize(): bool
@@ -23,20 +23,28 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'product_name' => 'required|max:50',
-            'unit' => 'required',
+
+            'nama'          => 'required|string|max:255',
+            'satuan'        => 'required|string|max:20',
+
 
         ];
         return $rules;
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
-            'product_name.required' => 'nama produk wajib diisi',
-            'product_name.max' => 'nama produk tidak boleh lebih dari 50 karakter',
+          
 
-            'unit.required' => 'satuan wajib diisi',
+            'nama.required'         => 'Nama wajib diisi.',
+            'nama.max'              => 'Nama maksimal 255 karakter.',
+
+            'satuan.required'       => 'Satuan wajib dipilih.',
+            'satuan.max'            => 'Satuan maksimal 20 karakter.',
+
+
+
         ];
     }
 

@@ -2,28 +2,26 @@
 
 namespace App\Repositories;
 
-use App\Http\Requests\ProductRequest;
-use App\Interfaces\ProductInterfaces;
-use App\Models\ProductModel;
+use App\Http\Requests\MasterRequest;
+use App\Interfaces\MasterInterfaces;
+use App\Models\MasterModel;
 use App\Traits\HttpResponseTraits;
 use Illuminate\Support\Str;
 
-
-
 use Illuminate\Support\Facades\Hash;
 
-class ProductRepositories implements ProductInterfaces
+class MasterRepositories implements MasterInterfaces
 {
     use HttpResponseTraits;
-    protected $ProductModel;
-    public function __construct(ProductModel $ProductModel)
+    protected $MasterModel;
+    public function __construct(MasterModel $MasterModel)
     {
-        $this->ProductModel = $ProductModel;
+        $this->MasterModel = $MasterModel;
     }
 
     public function getAllData()
     {
-        $data = $this->ProductModel::all();
+        $data = $this->MasterModel::all();
         if (!$data) {
             return $this->dataNotFound();
         } else {
@@ -32,13 +30,18 @@ class ProductRepositories implements ProductInterfaces
     }
 
 
-    public function createData(ProductRequest $request)
+    public function createData(MasterRequest $request)
     {
         try {
             // Create the product
-            $data = new $this->ProductModel;
-            $data->product_name = $request->input('product_name');
-            $data->unit = $request->input('unit');
+            $data = new $this->MasterModel;
+            $data->kode = 'PRD-' . strtoupper(Str::random(6)); // ✅ FIX
+            $data->nama = $request->input('nama');
+            $data->satuan = $request->input('satuan');
+            $data->jumlah = 0.00;
+            $data->stok_minimum = 0.00;
+            $data->is_aktif = 1;
+
 
             $data->save();
 
@@ -50,7 +53,7 @@ class ProductRepositories implements ProductInterfaces
 
     public function getDataById($id)
     {
-        $data = $this->ProductModel::where('id', $id)->first();
+        $data = $this->MasterModel::where('id', $id)->first();
         if ($data) {
             return $this->success($data);
         } else {
@@ -58,18 +61,22 @@ class ProductRepositories implements ProductInterfaces
         }
     }
 
-    public function updateDataById(ProductRequest $request, $id)
+    public function updateDataById(MasterRequest $request, $id)
     {
         try {
             // Cari data berdasarkan ID
-            $data = $this->ProductModel::where('id', $id)->first();
+            $data = $this->MasterModel::where('id', $id)->first();
             if (!$data) {
                 return $this->dataNotFound();
             }
 
             // Simpan nama dan harga produk
-            $data->product_name = $request->input('product_name');
-            $data->unit = $request->input('unit');
+            // $data->kode = $request->input('kode');
+            $data->nama = $request->input('nama');
+            $data->satuan = $request->input('satuan');
+            // $data->jumlah = $request->input('jumlah');
+            // $data->stok_minimum = $request->input('stok_minimum');
+            // $data->is_aktif = 1;
             // Simpan perubahan
             $data->update();
 
@@ -84,7 +91,7 @@ class ProductRepositories implements ProductInterfaces
     {
         try {
             // Temukan data berdasarkan ID
-            $data = $this->ProductModel::findOrFail($id);
+            $data = $this->MasterModel::findOrFail($id);
 
             $data->delete();
 
