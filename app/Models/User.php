@@ -24,13 +24,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'id',
-        'name',
-        'name_market',
+        'nama',
         'email',
         'role',
         'password',
-        'address',
-        'phone_number',
+        'no_hp',
+        'alamat',
         'created_at',
         'updated_at',
 
