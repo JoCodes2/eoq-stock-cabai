@@ -1,0 +1,246 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600;700;900&family=Kanit&family=Montserrat:wght@100&family=Poppins:ital,wght@0,100;0,300;0,500;1,300&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600;700;900&family=Kanit&family=Montserrat:wght@100&family=Poppins:ital,wght@0,100;0,300;0,400;0,500;1,300&display=swap");
+
+*body {
+    margin: 0;
+    padding: 0;
+}
+*html {
+    scroll-behavior: smooth;
+}
+
+/* font */
+.font-popins {
+    font-family: "Poppins", sans-serif;
+}
+.font-kanit {
+    font-family: "Kanit", sans-serif;
+}
+/* color */
+.sky {
+    color: #007bff;
+}
+
+/* navbar */
+.navbar {
+    background-color: #007bff;
+}
+
+.navbar-nav .nav-item {
+    margin-right: 20px;
+}
+
+.navbar-nav .nav-link {
+    position: relative;
+    color: #f4f4f4;
+    transition: color 0.3s;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.navbar-nav .nav-link::before {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background-color: #ffffff;
+    transition: width 0.3s;
+}
+
+.navbar-nav .nav-link:hover::before {
+    width: 100%;
+}
+
+/* akhir navbar */
+/* home*/
+
+#typing-container {
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 0.15em solid #054f5c;
+    /* Simulasi cursor blinking */
+}
+.title-home {
+    font-size: xx-large;
+    font-style: normal;
+}
+#typing-text {
+    font-size: normal;
+    font-family: "Kanit";
+    font-style: initial;
+}
+.intro-junior {
+    font-size: 14px;
+    font-style: normal;
+    text-align: justify;
+    word-wrap: break-word;
+}
+.bg-home {
+    background-image: url(/img/bg-blob.svg);
+    background-size: cover;
+}
+.btn-home {
+    background-color: transparent;
+    border: 2px solid #007bff;
+    color: #007bff;
+    transition: opacity 0.5s ease-in-out;
+}
+.btn-home:hover {
+    color: white;
+    background-color: #007bff;
+}
+.btn-cencel {
+    background-color: transparent;
+    border: 2px solid #313439;
+    color: #303234;
+    transition: opacity 0.5s ease-in-out;
+}
+.btn-cencel:hover {
+    color: white;
+    background-color: #292a2c;
+}
+
+@keyframes moveUpDown {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* about */
+.title-deskripsi-about span {
+    color: #06b6d4;
+}
+
+.nav-link .fa-instagram:hover {
+    color: rgb(255, 0, 111);
+}
+.nav-link .fa-facebook:hover {
+    color: rgb(0, 38, 255);
+}
+.nav-link .fa-envelope:hover {
+    color: rgb(255, 0, 0);
+}
+.nav-link .fa-linkedin:hover {
+    color: rgb(0, 200, 255);
+}
+.nav-link .fa-github:hover {
+    color: rgb(66, 66, 77);
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* skils */
+.card-skils {
+    box-shadow: 2px 5px 5px #054f5c;
+    border-radius: 20px;
+}
+.skils-border {
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 50%;
+    transition: box-shadow 0.3s ease-in-out;
+}
+.skils-border:hover {
+    box-shadow: 2px 5px 5px #054f5c;
+}
+.p-skils {
+    transition: box-shadow 0.3s ease-in-out;
+    font-style: inherit;
+}
+.p-skils:hover {
+    color: #054f5c;
+}
+
+/* portofolio */
+swiper-container {
+    width: 100%;
+    height: 100%;
+    padding: 5px 0px 5px 0px;
+}
+
+swiper-slide {
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 18px;
+    background: #f4f4f4;
+    display: flex;
+    border: 0.5px solid #f4f4f4;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+swiper-slide:hover {
+    box-shadow: 0px 4px 6px #054f5c;
+}
+
+swiper-slide img {
+    display: block;
+    max-width: 100%;
+    border-radius: 10px; /* Tambahkan border-radius pada gambar */
+    height: auto;
+    padding: 15px;
+}
+.btn-portofolio {
+    background-color: transparent;
+    font-size: 12px;
+    border: 2px solid #06b6d4;
+    color: #054f5c;
+    transition: opacity 0.5s ease-in-out;
+}
+.btn-portofolio:hover {
+    color: white;
+    background-color: #054f5c;
+}
+
+/* footer */
+a.nav-footer {
+    color: white; /* Ganti dengan warna teks yang Anda inginkan */
+}
+#footer {
+    background-color: #007bff;
+    margin-top: 50px;
+}
+.col-md-4 a.nav-footer {
+    text-decoration: none;
+    position: relative;
+}
+
+.col-md-4 a.nav-footer::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 0;
+    left: 0;
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    transition: background-position 0.3s ease;
+}
+
+.col-md-4 a.nav-footer:hover::before {
+    background-position: 0 0;
+    background: linear-gradient(90deg, transparent 100%, #054f5c 100%);
+    transition: background-position 0.3s ease;
+}
