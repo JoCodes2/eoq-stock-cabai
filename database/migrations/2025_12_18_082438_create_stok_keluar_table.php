@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('stok_keluar', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->foreignUuid('jenis_cabai_id')
-                ->constrained('jenis_cabai')
+            $table->foreignUuid('master_data_id')
+                ->constrained('master_data')
                 ->cascadeOnDelete();
 
             $table->foreignUuid('permintaan_id')

@@ -18,8 +18,8 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete();
 
-            $table->foreignUuid('jenis_cabai_id')
-                ->constrained('jenis_cabai')
+            $table->foreignUuid('master_data_id')
+                ->constrained('master_data')
                 ->restrictOnDelete();
 
             $table->string('nomor_permintaan')->unique();

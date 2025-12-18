@@ -18,7 +18,7 @@ return new class extends Migration
                 ->constrained('permintaan')
                 ->cascadeOnDelete()
                 ->unique();
-            $table->string('jenis_cabai', 100)->nullable();
+            $table->string('nama_cabai', 100)->nullable();
             $table->string('satuan');
             $table->decimal('jumlah', 10, 2);
             $table->decimal('harga_satuan', 12, 2);
