@@ -6,6 +6,7 @@ use App\Http\Controllers\CMS\MasterController;
 use App\Http\Controllers\CMS\ProductController;
 use App\Http\Controllers\CMS\RequestOilController;
 use App\Http\Controllers\CMS\RequestSupplyController;
+use App\Http\Controllers\CMS\StokmasukController;
 use App\Http\Controllers\CMS\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,9 +19,14 @@ Route::get('/master-data', function () {
     return view('Admin.master-data');
 });
 
+Route::get('/stok-masuk', function () {
+    return view('Admin.stok-masuk');
+});
+
 Route::get('/user', function () {
     return view('Admin.user');
 });
+
 Route::prefix('v1')->group(function () {
 
     // // route  api  //
@@ -29,6 +35,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/create', 'createData');
         Route::get('/get/{id}', 'getDataById');
         Route::post('/update/{id}', 'updateDataById');
+        Route::delete('/delete/{id}', 'deleteDataById');
+    });
+
+    Route::prefix('stokmasuk')->controller(StokmasukController::class)->group(function () {
+        Route::get('/', 'getAllData');
+        Route::post('/create', 'createData');
+        Route::get('/get/{id}', 'getDataById');
         Route::delete('/delete/{id}', 'deleteDataById');
     });
 

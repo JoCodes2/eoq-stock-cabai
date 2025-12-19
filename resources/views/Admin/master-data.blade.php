@@ -18,14 +18,13 @@
                             <th>No</th>
                             <th>Nama Produk</th>
                             <th>Satuan</th>
+                            <th>Stok</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody">
-                        <tr>
-                            <td colspan="4" class="text-center">Memuat data...</td>
-                        </tr>
-                    </tbody>
+
+                    <tbody></tbody>
+
                 </table>
             </div>
         </div>
@@ -72,224 +71,216 @@
     <script>
         $(document).ready(function() {
 
-            // Ambil data produk
+            /* ===============================
+               1. INISIALISASI DATATABLE
+            =============================== */
+            let table = $('#dataMaster').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                order: []
+            });
+
+            /* ===============================
+               2. AMBIL DATA MASTER
+            =============================== */
             function getData() {
                 $.ajax({
-                    url: `/v1/master`,
-                    method: "GET",
-                    dataType: "json",
+                    url: '/v1/master',
+                    method: 'GET',
+                    dataType: 'json',
                     success: function(response) {
-                        let tableBody = "";
+                        console.log(response);
+                        table.clear();
+
                         $.each(response.data, function(index, item) {
-                            tableBody += "<tr>";
-                            tableBody += "<td>" + (index + 1) + "</td>";
-                            tableBody += "<td>" + item.nama + "</td>";
-                            tableBody += "<td>" + item.satuan + "</td>";
-                            tableBody += "<td>";
-                            tableBody +=
-                                "<button type='button' class='btn btn-outline-primary btn-sm edit-btn' data-id='" +
-                                item.id + "'><i class='fas fa-edit'></i></button> ";
-                            tableBody +=
-                                "<button type='button' class='btn btn-outline-danger btn-sm delete-confirm' data-id='" +
-                                item.id + "'><i class='fas fa-trash'></i></button>";
-                            tableBody += "</td>";
-                            tableBody += "</tr>";
+                            table.row.add([
+                                index + 1,
+                                item.nama,
+                                item.satuan,
+                                item.jumlah ?? 0, // 🔥 INI PENTING
+
+                                `
+                        <button class="btn btn-outline-primary btn-sm edit-btn" data-id="${item.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-confirm" data-id="${item.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        `
+                            ]);
                         });
 
-                        $("#dataMaster tbody").html(tableBody);
-
-                        $('#dataMaster').DataTable({
-                            destroy: true,
-                            paging: true,
-                            searching: true,
-                            ordering: true,
-                            info: true,
-                            order: []
-                        });
+                        table.draw(false); // pagination tetap
                     },
                     error: function() {
-                        console.log("Gagal mengambil data dari server");
+                        console.log('Gagal mengambil data master');
                     }
                 });
             }
 
+            // Load pertama kali
             getData();
 
-            // create
+            /* ===============================
+               3. SIMPAN (CREATE & UPDATE)
+            =============================== */
             $(document).on('click', '#simpanData', function(e) {
-                $('.text-danger').text('');
                 e.preventDefault();
+                $('.text-danger').text('');
 
                 let id = $('#id').val();
+                let url = id ?
+                    `/v1/master/update/${id}` :
+                    '/v1/master/create';
+
                 let formData = new FormData($('#upsertDataForm')[0]);
-                let url = id ? `/v1/master/update/${id}` : '/v1/master/create';
-                let method = id ? 'POST' : 'POST';
 
                 loadingAllert();
 
                 $.ajax({
-                    type: method,
+                    type: 'POST',
                     url: url,
                     data: formData,
                     contentType: false,
                     processData: false,
                     success: function(response) {
-                        console.log(response);
                         Swal.close();
 
-                        if (response.code === 422) { // Jika validasi gagal
-                            let errors = response.errors;
-                            $.each(errors, function(key, value) {
+                        // VALIDASI
+                        if (response.code === 422) {
+                            $.each(response.errors, function(key, value) {
                                 $('#' + key + '-error').text(value[0]);
                             });
-                        } else if (response.code === 200 || response.status === "success") {
-                            successAlert('Data berhasil disimpan!');
-                            reloadBrowsers();
-                        } else {
-                            errorAlert();
+                            return;
                         }
+
+                        // BERHASIL
+                        if (response.code === 200 || response.status === 'success') {
+                            successAlert('Data berhasil disimpan!');
+                            $('#upsertDataModal').modal('hide');
+                            $('#upsertDataForm')[0].reset();
+                            $('#id').val('');
+                            getData(); // 🔥 refresh tabel
+                            return;
+                        }
+
+                        errorAlert();
                     },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
+                    error: function() {
                         Swal.close();
                         errorAlert();
                     }
                 });
             });
 
-            // Edit data button click handler
+            /* ===============================
+               4. EDIT DATA
+            =============================== */
             $(document).on('click', '.edit-btn', function() {
                 let id = $(this).data('id');
+
                 $.ajax({
                     url: `/v1/master/get/${id}`,
-                    method: "GET",
-                    dataType: "json",
+                    method: 'GET',
+                    dataType: 'json',
                     success: function(response) {
-                        console.log(response);
                         $('#upsertDataModal').modal('show');
-
-                        // Populate form fields with existing data
                         $('#id').val(response.data.id);
                         $('#nama').val(response.data.nama);
                         $('#satuan').val(response.data.satuan);
-
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching data for edit:', error);
                     }
                 });
             });
 
-            // Delete data button click handler
+            /* ===============================
+               5. DELETE DATA
+            =============================== */
             $(document).on('click', '.delete-confirm', function() {
                 let id = $(this).data('id');
 
-                // Function to delete data
-                function deleteData() {
+                confirmAlert('Apakah Anda yakin ingin menghapus data?', function() {
                     $.ajax({
                         type: 'DELETE',
                         url: `/v1/master/delete/${id}`,
                         dataType: 'json',
                         success: function(response) {
-                            console.log(response);
-                            if (response.code === 200 || response.status === "success") {
+                            if (response.code === 200 || response.status ===
+                                'success') {
                                 successAlert('Data berhasil dihapus!');
-
-                                // Tunggu sebentar sebelum reload
-                                setTimeout(function() {
-                                    location
-                                        .reload(); // Reload browser setelah data terhapus
-                                }, 1500);
+                                getData(); // 🔥 refresh tabel
                             } else {
                                 errorAlert();
                             }
                         },
-                        error: function(xhr, status, error) {
-                            console.error('Error:', xhr.responseText);
+                        error: function() {
                             errorAlert();
                         }
                     });
-                }
-
-                // Show confirmation alert
-                confirmAlert('Apakah Anda yakin ingin menghapus data?', deleteData);
+                });
             });
 
-            // messeage alert
-            // alert success message
+            /* ===============================
+               6. MODAL TAMBAH
+            =============================== */
+            $(document).on('click', '#myBtn', function() {
+                $('#upsertDataForm')[0].reset();
+                $('#id').val('');
+                $('.text-danger').text('');
+                $('#upsertDataModal').modal('show');
+            });
+
+            $('#upsertDataModal').on('hidden.bs.modal', function() {
+                $('#upsertDataForm')[0].reset();
+                $('#id').val('');
+            });
+
+            /* ===============================
+               7. ALERT UTILITIES
+            =============================== */
             function successAlert(message) {
                 Swal.fire({
                     title: 'Berhasil!',
                     text: message,
                     icon: 'success',
                     showConfirmButton: false,
-                    timer: 1000,
-                })
+                    timer: 1200
+                });
             }
 
-            // alert error message
             function errorAlert() {
                 Swal.fire({
                     title: 'Error',
                     text: 'Terjadi kesalahan!',
                     icon: 'error',
                     showConfirmButton: false,
-                    timer: 1000,
+                    timer: 1200
                 });
             }
-
-            function reloadBrowsers() {
-                setTimeout(function() {
-                    location.reload();
-                }, 1500);
-            }
-
 
             function confirmAlert(message, callback) {
                 Swal.fire({
-                    title: '<span style="font-size: 22px"> Konfirmasi!</span>',
-                    html: message,
+                    title: 'Konfirmasi',
+                    text: message,
+                    icon: 'warning',
                     showCancelButton: true,
-                    showConfirmButton: true,
-                    cancelButtonText: 'Tidak',
                     confirmButtonText: 'Ya',
-                    reverseButtons: true,
-                    confirmButtonColor: '#48ABF7',
-                    cancelButtonColor: '#EFEFEF',
-                    customClass: {
-                        cancelButton: 'text-dark'
-                    }
+                    cancelButtonText: 'Tidak',
+                    reverseButtons: true
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        callback();
-                    }
+                    if (result.isConfirmed) callback();
                 });
             }
 
-            // loading alert
             function loadingAllert() {
                 Swal.fire({
                     title: 'Loading...',
-                    text: 'Please wait',
+                    text: 'Mohon tunggu',
                     allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                    didOpen: () => Swal.showLoading()
                 });
             }
-
-            // Tampilkan modal tambah
-            $(document).on('click', '#myBtn', function() {
-                $('#upsertDataForm')[0].reset(); // reset form
-                $('#id').val('');
-                $('#upsertDataModal').modal('show');
-            });
-
-            // Reset saat modal ditutup
-            $('#upsertDataModal').on('hidden.bs.modal', function() {
-                $('#upsertDataForm')[0].reset();
-                $('#id').val('');
-            });
 
         });
     </script>

@@ -21,12 +21,20 @@ class MasterRepositories implements MasterInterfaces
 
     public function getAllData()
     {
+        // $data = $this->MasterModel::all();
+        // if (!$data) {
+        //     return $this->dataNotFound();
+        // } else {
+        //     return $this->success($data);
+        // }
+
         $data = $this->MasterModel::all();
-        if (!$data) {
+
+        if ($data->isEmpty()) {
             return $this->dataNotFound();
-        } else {
-            return $this->success($data);
         }
+
+        return $this->success($data);
     }
 
 
@@ -78,7 +86,8 @@ class MasterRepositories implements MasterInterfaces
             // $data->stok_minimum = $request->input('stok_minimum');
             // $data->is_aktif = 1;
             // Simpan perubahan
-            $data->update();
+            // $data->update();
+            $data->save();
 
             return $this->success($data);
         } catch (\Throwable $th) {
