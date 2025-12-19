@@ -4,12 +4,12 @@
             <div class="app-brand demo">
                 <a href="/home" class="app-brand-link">
                     <span class="app-brand-logo demo">
-                        <img src="{{ asset('assets/assets/scm.png') }}" alt="Logo" class="img-fluid" width="50"
-                            height="50">
+                        <img src="{{ asset('assets/assets/img/tanicabai.jpeg') }}" alt="Logo" class="img-fluid"
+                            width="50" height="50">
                     </span>
                     <span class="text-start app-brand-text fw-bold ms-2 ">
-                        <small>Supply Chain Management</small><br>
-                        <small>Management</small><br>
+                        <small>STOK CABAI</small><br>
+                        <small>E O Q</small><br>
                     </span>
                 </a>
 
@@ -22,7 +22,7 @@
 
             <ul class="menu-inner py-1">
                 <li class="menu-item {{ request()->is('home') ? 'active' : '' }}">
-                    <a href="/home" class="menu-link">
+                    <a href="/" class="menu-link">
                         <i class="menu-icon fa-solid fa-house"></i>
                         <div data-i18n="Analytics">Dashboard</div>
                     </a>
@@ -39,6 +39,18 @@
                         <div data-i18n="Analytics">Master Data</div>
                     </a>
                 </li>
+                <li class="menu-item {{ request()->is('stok-masuk') ? 'active' : '' }}">
+                    <a href="/stok-masuk" class="menu-link">
+                        <i class="menu-icon fa-solid fa-exchange-alt"></i>
+                        <div data-i18n="Analytics">Stok Masuk</div>
+                    </a>
+                </li>
+                {{-- <li class="menu-item {{ request()->is('form-request') ? 'active' : '' }}">
+                    <a href="/form-request" class="menu-link">
+                        <i class="menu-icon fa-solid fa-list"></i>
+                        <div data-i18n="Analytics">form request</div>
+                    </a>
+                </li> --}}
 
 
 

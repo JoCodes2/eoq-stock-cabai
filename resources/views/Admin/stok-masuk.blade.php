@@ -4,14 +4,14 @@
     <div class="card">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h3 class="m-0 font-weight-bold">
-                <i class="fa-solid fa-book pr-2"></i> Produk
+                <i class="fa-solid fa-book pr-2"></i> Stok Masuk
             </h3>
-            <button class="btn btn-primary btn-sm" id="myBtn"><i class="fas fa-plus"></i> Tambah Produk</button>
+            <button class="btn btn-primary btn-sm" id="myBtn"><i class="fas fa-plus"></i> Tambah</button>
         </div>
 
         <div class="card-body py-2">
             <div class="py-3">
-                <h6>Daftar Produk</h6>
+                <h6>Daftar Stok</h6>
                 <table id="dataStokmasuk" class="table table-bordered table-striped">
                     <thead>
                         <tr>

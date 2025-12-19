@@ -1,52 +1,51 @@
 @extends('Ui.master')
 @section('content')
-@php
+    {{-- @php
     $userId = auth()->user()->id;
-@endphp
-<div class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto p-6">
-        <div class="bg-white p-6 rounded-2xl shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-green-700">Profil</h1>
-            </div>
-
-            <div class="flex items-center mb-6">
-                @include('Ui.profile-user')
-            </div>
-
-            <div class="border-b border-gray-200 mb-6">
-                @include('Ui.navbar-profile')
-            </div>
-
-            <div>
-                <h3 class="text-lg font-bold mb-2 text-gray-700">📜 Penawaran</h3>
-                <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-                    <table class="min-w-full bg-white text-sm text-left text-gray-600"  id="oilTable">
-                        <thead class="bg-green-50 text-green-700 font-semibold uppercase tracking-wide text-xs">
-                            <tr>
-                                <th class="px-6 py-3">No</th>
-                                <th class="px-6 py-3">Nama Pengaju</th>
-                                <th class="px-6 py-3">Nama Toko</th>
-                                <th class="px-6 py-3">Produk</th>
-                                <th class="px-6 py-3">Jumlah</th>
-                                <th class="px-6 py-3">Tanggal</th>
-                                <th class="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 text-sm">
-
-                        </tbody>
-                    </table>
+@endphp --}}
+    <div class="bg-gray-50 min-h-screen">
+        <div class="container mx-auto p-6">
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-green-700">Profil</h1>
                 </div>
-            </div>
 
+                <div class="flex items-center mb-6">
+                    @include('Ui.profile-user')
+                </div>
+
+                <div class="border-b border-gray-200 mb-6">
+                    @include('Ui.navbar-profile')
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-2 text-gray-700">📜 Penawaran</h3>
+                    <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
+                        <table class="min-w-full bg-white text-sm text-left text-gray-600" id="oilTable">
+                            <thead class="bg-green-50 text-green-700 font-semibold uppercase tracking-wide text-xs">
+                                <tr>
+                                    <th class="px-6 py-3">No</th>
+                                    <th class="px-6 py-3">Nama Pengaju</th>
+                                    <th class="px-6 py-3">Nama Toko</th>
+                                    <th class="px-6 py-3">Produk</th>
+                                    <th class="px-6 py-3">Jumlah</th>
+                                    <th class="px-6 py-3">Tanggal</th>
+                                    <th class="px-6 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 text-sm">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
-</div>
 @endsection
 @section('scripts')
-
-    <script>
+    {{-- <script>
         const userId = "{{ $userId }}";
 
         $(document).ready(function () {
@@ -125,5 +124,5 @@
                 }
             });
         });
-    </script>
+    </script> --}}
 @endsection

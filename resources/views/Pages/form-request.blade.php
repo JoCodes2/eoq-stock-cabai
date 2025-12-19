@@ -1,64 +1,84 @@
 @extends('Ui.master')
 @section('content')
-@php
-    $userId = auth()->user()->id;
-@endphp
-<div class="bg-gray-50">
-    <div class="container mx-auto p-6">
-        <div class="bg-white p-6 rounded-2xl shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-green-700">Profil</h1>
-            </div>
+    @php
+        // $userId = auth()->user()->id;
+    @endphp
+    <div class="bg-red-50">
+        <div class="container mx-auto p-6">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-red-100">
 
-            <div class="flex items-center mb-6">
-                @include('Ui.profile-user')
-            </div>
-            <div class="border-b border-gray-200 mb-6">
-                @include('Ui.navbar-profile')
-            </div>
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-red-700">
+                        Profil Pengguna
+                    </h1>
+                </div>
 
-            <div class="bg-gray-50 p-6 rounded-xl shadow-inner">
-                <h3 class="text-xl font-bold text-gray-700 mb-4">🛒 Form data</h3>
-                <p class="text-gray-500 mb-6">Ajukan permintaan anda dengan mengisi form dibawah ini</p>
-                <form method="POST" id="form-data">
-                    @csrf
+                <!-- Profile User -->
+                <div class="flex items-center mb-6">
+                    @include('Ui.profile-user')
+                </div>
 
-                    <div class="mb-6">
-                        <label for="product_id" class="block text-gray-700 font-medium mb-1">Nama Produk</label>
-                        <select name="product_id" id="product_id" class="w-full mt-1 p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition">
-                            <option value="" selected disabled>-- Pilih Produk --</option>
-                        </select>
-                    </div>
+                <!-- Navbar Profile -->
+                <div class="border-b border-red-200 mb-6">
+                    @include('Ui.navbar-profile')
+                </div>
 
-                    <div class="mb-6">
-                        <label for="quantity" class="block text-gray-700 font-medium mb-1">Kuantitas (Liter)</label>
-                        <input type="number" name="quantity" id="quantity" class="w-full mt-1 p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" >
-                    </div>
+                <!-- Form -->
+                <div class="bg-red-50 p-6 rounded-xl shadow-inner">
+                    <h3 class="text-xl font-bold text-red-700 mb-2">
+                        🌶️ Form Permintaan
+                    </h3>
+                    <p class="text-gray-600 mb-6">
+                        Pilih data dan tambahkan catatan permintaan Anda
+                    </p>
 
-                    <div class="mb-6">
-                        <label for="end_time" class="block text-gray-700 font-medium mb-1">Batas Waktu Permintaan</label>
-                        <input type="date" name="end_time" id="end_time" class="w-full mt-1 p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition" >
-                    </div>
+                    <form method="POST" id="form-data">
+                        @csrf
 
-                    <div class="mb-6">
-                        <label for="description" class="block text-gray-700 font-medium mb-1">Deskripsi Tambahan</label>
-                        <textarea name="description" id="description" rows="3" class="w-full mt-1 p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition"></textarea>
-                    </div>
+                        <!-- Master Data -->
+                        <div class="mb-6">
+                            <label for="master_data_id" class="block text-gray-700 font-medium mb-1">
+                                Jenis Cabai
+                            </label>
+                            <select name="master_data_id" id="master_data_id"
+                                class="w-full p-3 border border-gray-300 rounded-xl shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-red-500 transition">
+                                <option value="" selected disabled>-- Pilih Jenis Cabai --</option>
+                                {{-- contoh --}}
+                                {{-- <option value="1">Cabai Rawit</option> --}}
+                                {{-- <option value="2">Cabai Merah Keriting</option> --}}
+                            </select>
+                        </div>
 
-                    <div class="text-right">
-                        <button type="submit" id="submitBtn" class="bg-green-600 hover:bg-green-700 transition text-white px-6 py-2 rounded-xl shadow-md font-semibold">
-                            💾 Ajukan Permintaan Permintaan
-                        </button>
-                    </div>
-                </form>
+                        <!-- Catatan -->
+                        <div class="mb-6">
+                            <label for="catatan" class="block text-gray-700 font-medium mb-1">
+                                Catatan Tambahan
+                            </label>
+                            <textarea name="catatan" id="catatan" rows="4"
+                                class="w-full p-3 border border-gray-300 rounded-xl shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                                placeholder="Contoh: butuh cabai segar, kirim hari ini"></textarea>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="text-right">
+                            <button type="submit" id="submitBtn"
+                                class="bg-red-600 hover:bg-red-700 transition text-white px-6 py-2
+                       rounded-xl shadow-md font-semibold">
+                                🚀 Simpan Permintaan
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
             </div>
         </div>
     </div>
-</div>
 @endsection
 @section('scripts')
-<script>
+    {{-- <script>
     const userId = "{{ $userId }}";
 
     $(document).ready(function () {
@@ -238,5 +258,5 @@
         });
 
     });
-</script>
+</script> --}}
 @endsection

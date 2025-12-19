@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::get('/home', function () {
+Route::get('/', function () {
     return view('Admin.dashboard');
 });
 Route::get('/master-data', function () {
@@ -21,6 +21,20 @@ Route::get('/master-data', function () {
 
 Route::get('/stok-masuk', function () {
     return view('Admin.stok-masuk');
+});
+Route::get('/form-request', function () {
+    return view('Pages.form-request');
+});
+Route::get('/home', function () {
+    return view('Pages.home');
+});
+
+Route::get('/login', function () {
+    return view('Auth.login');
+});
+
+Route::get('/register', function () {
+    return view('Auth.register');
 });
 
 Route::get('/user', function () {
