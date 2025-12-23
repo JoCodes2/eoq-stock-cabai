@@ -18,6 +18,8 @@ class MasterModel extends Model
         'satuan',
         'jumlah',
         'stok_minimum',
+        'harga_beli_terakhir',
+        'harga_jual',
         'is_aktif',
         'created_at',
         'updated_at',

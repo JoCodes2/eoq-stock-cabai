@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('master_data', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('kode');
+            $table->string('kode')->unique();
             $table->string('nama');
             $table->string('satuan')->default('kg');
-            $table->decimal('jumlah')->default(0);
-            $table->decimal('stok_minimum')->default(0);
+            $table->decimal('jumlah', 10, 2)->default(0);
+            $table->decimal('stok_minimum', 10, 2)->default(0);
+
+            $table->decimal('harga_beli_terakhir', 12, 2)->default(0);
+            $table->decimal('harga_jual', 12, 2)->default(0);
 
             $table->boolean('is_aktif')->default(true);
             $table->timestamps();
