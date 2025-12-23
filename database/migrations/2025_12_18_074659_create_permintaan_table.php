@@ -18,10 +18,6 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete();
 
-            $table->foreignUuid('master_data_id')
-                ->constrained('master_data')
-                ->restrictOnDelete();
-
             $table->string('nomor_permintaan')->unique();
 
             $table->enum('status', [
@@ -33,6 +29,7 @@ return new class extends Migration
             ])->default('menunggu');
 
             $table->text('catatan')->nullable();
+            $table->decimal('total_harga_nota', 14, 2)->default(0);
 
             $table->timestamp('diproses_pada')->nullable();
             $table->timestamp('selesai_pada')->nullable();

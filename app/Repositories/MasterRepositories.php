@@ -35,9 +35,10 @@ class MasterRepositories implements MasterInterfaces
             $data->nama = $request->input('nama');
             $data->satuan = $request->input('satuan');
             $data->jumlah = 0.00;
-            $data->stok_minimum = $request->input('stok_minimum', 0);
+            $data->stok_minimum = $request->input('stok_minimum') ?? 0;
+
             $data->harga_beli_terakhir = 0.00;
-            $data->harga_jual = $request->input('harga_jual', 0);
+            $data->harga_jual = $request->input('harga_jual') ?? 0;
             $data->is_aktif = 1;
             $data->save();
 

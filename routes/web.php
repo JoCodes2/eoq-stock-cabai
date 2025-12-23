@@ -3,6 +3,7 @@
 use App\Http\Controllers\CMS\AuthController;
 use App\Http\Controllers\CMS\DashboardController;
 use App\Http\Controllers\CMS\MasterController;
+use App\Http\Controllers\CMS\PermintaanController;
 use App\Http\Controllers\CMS\ProductController;
 use App\Http\Controllers\CMS\RequestOilController;
 use App\Http\Controllers\CMS\RequestSupplyController;
@@ -30,6 +31,14 @@ Route::prefix('v1/user')->controller(UserController::class)->group(function () {
     Route::delete('/delete/{id}', 'deleteData');
 });
 
+Route::prefix('v1/permintaan')->controller(PermintaanController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('/create', 'store');
+    Route::get('/show/{id}', 'show');
+    Route::get('/nota/{nota}', 'showByNota');
+    Route::patch('/update-status/{id}', 'updateStatus');
+    Route::delete('/delete/{id}', 'destroy');
+});
 Route::middleware(['auth', 'web'])->group(function () {
     // pemebli
     Route::get('/form-request', function () {
@@ -67,6 +76,4 @@ Route::middleware(['auth', 'web'])->group(function () {
         });
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
-
-
 });
