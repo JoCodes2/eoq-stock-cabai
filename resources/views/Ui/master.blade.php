@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>TaniCabai</title>
+    <script>
+        let appUrl = '{{ env('APP_URL') }}';
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" />
@@ -44,7 +47,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script>
-        $(document).ready(function() {
             function showAlert(message, type = 'success') {
                 const alertId = "alert-" + new Date().getTime();
                 let bgColor = "",
@@ -77,6 +79,9 @@
                 $("body").append(alertDiv);
                 setTimeout(() => alertDiv.fadeOut(500, () => alertDiv.remove()), 3000);
             }
+    </script>
+    <script>
+        $(document).ready(function() {
             $(document).on('click', '#btnLogout', function() {
                 $('#confirmModalLogout').removeClass('hidden');
             });

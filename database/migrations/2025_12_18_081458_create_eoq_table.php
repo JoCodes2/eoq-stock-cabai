@@ -13,32 +13,20 @@ return new class extends Migration
     {
         Schema::create('pengaturan_eoq', function (Blueprint $table) {
             $table->uuid('id')->primary();
-
             $table->foreignUuid('master_data_id')
                 ->constrained('master_data')
                 ->cascadeOnDelete()
                 ->unique();
-
-            // Parameter EOQ
             $table->decimal('permintaan_tahunan', 10, 2);
             $table->decimal('biaya_pemesanan', 12, 2);
             $table->decimal('biaya_penyimpanan', 12, 2);
-
-            // Parameter pendukung
             $table->integer('waktu_tunggu_hari')->default(1);
             $table->decimal('stok_aman', 10, 2)->default(0);
+            $table->decimal('nilai_eoq', 10, 2)->nullable();
+            $table->decimal('titik_pemesanan_ulang', 10, 2)->nullable();
 
-            // Hasil perhitungan EOQ
-            $table->decimal('nilai_eoq', 10, 2);
-            $table->decimal('titik_pemesanan_ulang', 10, 2);
-
-            // Audit perhitungan
             $table->date('terakhir_dihitung')->nullable();
-
-            // Opsional (nilai plus)
             $table->boolean('aktif')->default(true);
-            $table->text('catatan')->nullable();
-
             $table->timestamps();
         });
     }

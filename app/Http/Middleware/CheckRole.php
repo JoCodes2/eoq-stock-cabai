@@ -25,7 +25,7 @@ class CheckRole
             if ($user && $user->role === 'admin') {
                 return redirect('/home');
             } else {
-                return redirect('/profile');
+                return redirect('/form-request');
             }
         }
 

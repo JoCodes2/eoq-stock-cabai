@@ -16,10 +16,9 @@ return new class extends Migration
 
             $table->foreignUuid('permintaan_id')
                 ->constrained('permintaan')
-                ->cascadeOnDelete()
-                ->unique();
+                ->cascadeOnDelete();
             $table->string('nama_cabai', 100)->nullable();
-            $table->string('satuan');
+            $table->string('satuan')->default('kg');
             $table->decimal('jumlah', 10, 2);
             $table->decimal('harga_satuan', 12, 2);
             $table->decimal('total_harga', 14, 2);

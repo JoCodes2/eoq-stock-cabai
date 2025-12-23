@@ -23,7 +23,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->decimal('jumlah', 10, 2);
-
+            $table->string('keterangan')->nullable();
             $table->timestamp('dikeluarkan_pada')->useCurrent();
         });
     }

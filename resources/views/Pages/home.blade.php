@@ -83,7 +83,7 @@
                 yang adil, efisien, dan berkelanjutan.
             </p>
 
-            <a href="#" class="bg-red-600 hover:bg-red-700 transition text-white px-8 py-3 rounded-lg font-semibold">
+            <a href="/login" class="bg-red-600 hover:bg-red-700 transition text-white px-8 py-3 rounded-lg font-semibold">
                 Mulai Sekarang
             </a>
         </div>

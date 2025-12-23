@@ -11,15 +11,9 @@
                 class="{{ Request::is('/') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
                 Beranda
             </a>
-
-            <a href="{{ url('/request-oil') }}"
-                class="{{ Request::is('request-oil') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
-                Permintaan Cabai
-            </a>
-
             @auth
-                <a href="{{ url('/profile') }}"
-                    class="{{ Request::is('profile') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
+                <a href="{{ url('/form-request') }}"
+                    class="{{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
                     Profil
                 </a>
             @endauth
@@ -30,7 +24,7 @@
                         class="bg-red-100 text-red-700 px-4 py-2 rounded-2xl hover:bg-red-200 transition">
                         Masuk
                     </a>
-                    <a href="{{ url('/auth-register') }}"
+                    <a href="{{ url('/register') }}"
                         class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-2xl transition">
                         Daftar
                     </a>
@@ -57,15 +51,9 @@
             class="block py-2 {{ Request::is('/') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
             Beranda
         </a>
-
-        <a href="{{ url('/request-oil') }}"
-            class="block py-2 {{ Request::is('request-oil') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
-            Permintaan Cabai
-        </a>
-
         @auth
-            <a href="{{ url('/profile') }}"
-                class="block py-2 {{ Request::is('profile') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
+            <a href="{{ url('/form-request') }}"
+                class="block py-2 {{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
                 Profil
             </a>
         @endauth
@@ -75,7 +63,7 @@
                 <a href="{{ url('/login') }}" class="w-1/2 text-center bg-red-100 text-red-700 px-4 py-2 rounded-2xl">
                     Masuk
                 </a>
-                <a href="{{ url('/auth-register') }}"
+                <a href="{{ url('/register') }}"
                     class="w-1/2 text-center bg-red-600 text-white px-4 py-2 rounded-2xl">
                     Daftar
                 </a>

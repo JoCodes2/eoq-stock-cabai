@@ -45,7 +45,7 @@
             <!-- Link ke Register -->
             <p class="text-center text-gray-600 mt-4">
                 Belum punya akun?
-                <a href="{{ url('/auth-register') }}" class="text-red-600 hover:underline font-medium">
+                <a href="{{ url('/register') }}" class="text-red-600 hover:underline font-medium">
                     Daftar
                 </a>
             </p>
@@ -56,43 +56,6 @@
 @section('scripts')
     <script>
         $(document).ready(function() {
-
-            function showAlert(message, type = 'success') {
-                const alertId = "alert-" + new Date().getTime();
-                let bgColor = "",
-                    iconClass = "";
-
-                switch (type) {
-                    case 'success':
-                        bgColor = "bg-red-600";
-                        iconClass = "fas fa-check-circle";
-                        break;
-                    case 'warning':
-                        bgColor = "bg-orange-500";
-                        iconClass = "fas fa-exclamation-triangle";
-                        break;
-                    case 'error':
-                        bgColor = "bg-red-700";
-                        iconClass = "fas fa-times-circle";
-                        break;
-                    default:
-                        bgColor = "bg-gray-500";
-                        iconClass = "fas fa-info-circle";
-                }
-
-                const alertDiv = $(`
-            <div id="${alertId}"
-                class="fixed top-5 right-5 px-4 py-3 rounded-lg shadow-md text-white text-sm ${bgColor}
-                flex items-center space-x-2 z-50">
-                <i class="${iconClass}"></i>
-                <span>${message}</span>
-            </div>
-        `);
-
-                $("body").append(alertDiv);
-                setTimeout(() => alertDiv.fadeOut(500, () => alertDiv.remove()), 3000);
-            }
-
             function sendAjaxRequest() {
                 const formData = {
                     email: $('#email').val(),
@@ -118,7 +81,7 @@
                             setTimeout(() => {
                                 window.location.href = response.role === 'admin' ?
                                     '/home' :
-                                    '/profile';
+                                    '/form-request';
                             }, 1000);
 
                         } else if (response.code === 422) {

@@ -52,7 +52,7 @@
                         <!-- Kode Stok Masuk -->
                         <div class="mb-3">
                             <label class="form-label">Kode Stok Masuk</label>
-                            <input type="text" name="kode_stok_masuk" id="kode_stok_masuk" class="form-control">
+                            <input type="text" name="kode_stok_masuk" id="kode_stok_masuk" class="form-control" readonly value="otomatis">
                             <small class="text-danger" id="kode_stok_masuk-error"></small>
                         </div>
 
@@ -145,8 +145,6 @@
                 let satuan = $(this).find(':selected').data('satuan');
                 $('#satuanLabel').text(satuan ? satuan : 'kg');
             });
-
-
 
 
             // Ambil data

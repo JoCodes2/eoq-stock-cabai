@@ -14,16 +14,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $user = User::create([
-        //     'id' => Str::uuid(),
-        //     'name' => 'Administrator',
-        //     'name_market' => 'Admin Center',
-        //     'email' => 'admin@gmail.com',
-        //     'role' => 'admin',
-        //     'password' => Hash::make('admin4627'),
-        //     'address' => 'Jl. Pusat Pemerintahan No.1',
-        //     'phone_number' => '081234567890',
-        // ]);
-        // $user->createToken('auth_token')->plainTextToken;
+        $user = User::create([
+            'id' => Str::uuid(),
+            'nama' => 'Administrator',
+            'email' => 'admin@gmail.com',
+            'role' => 'admin',
+            'password' => Hash::make('12345678'),
+            'no_hp' => '08123456789',
+            'alamat' => 'Palu',
+        ]);
+        $user->createToken('auth_token')->plainTextToken;
     }
 }
