@@ -1,84 +1,116 @@
 @extends('Layouts.Base')
 
 @section('content')
-    <div class="container mt-4">
-        <div class="row" id="dashboard-cards">
-            <div class="col-md-4">
-                <div class="card text-white bg-primary mb-3 shadow">
-                    <div class="card-header d-flex align-items-center">
-                        <i class="fas fa-user-shield fa-2x me-2"></i>
-                        <span>Total Admin</span>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title text-white fw-bold" id="admin-count">0</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-primary mb-3 shadow">
-                    <div class="card-header d-flex align-items-center">
-                        <i class="fas fa-truck fa-2x me-2"></i>
-                        <span>Total Supplier</span>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title text-white fw-bold" id="supplier-count">0</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-primary mb-3 shadow">
-                    <div class="card-header d-flex align-items-center">
-                        <i class="fas fa-store fa-2x me-2"></i>
-                        <span>Total Market</span>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title text-white fw-bold" id="market-count">0</h5>
-                    </div>
-                </div>
-            </div>
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">TOTAL MODAL</small>
+            <h4 id="txt_modal" class="fw-bold text-primary">Rp 0</h4>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">TOTAL OMZET</small>
+            <h4 id="txt_omzet" class="fw-bold text-success">Rp 0</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">KEUNTUNGAN</small>
+            <h4 id="txt_profit" class="fw-bold text-info">Rp 0</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">STOK KRITIS</small>
+            <h4 id="txt_reorder" class="fw-bold text-danger">0 Produk</h4>
+        </div>
+    </div>
+</div>
+
+<hr>
+<h5 class="fw-bold mb-3"><i class="fa fa-chart-pie me-2"></i> Detail Analisis Stok Per Produk</h5>
+
+<div class="row" id="chartContainer">
+    <div class="col-12 text-center py-5" id="loader">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Memuat data analisis...</p>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
-    <script>
-        $(document).ready(function() {
-            // Ambil data dashboard dari API
-            $.ajax({
-                url: '/v1/dashboard',
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        $('#admin-count').text(response.data.admin);
-                        $('#supplier-count').text(response.data.supplier);
-                        $('#market-count').text(response.data.market);
-                    } else {
-                        console.error('Gagal mengambil data dashboard');
-                    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    $.get('/v1/dashboard/chart-eoq', function(res) {
+        $('#loader').remove(); // Hapus loading
+
+        // 1. Update Widget Atas
+        const summary = res.summary || {};
+        $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
+        $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
+        $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan || 0).toLocaleString('id-ID'));
+        $('#txt_reorder').text((summary.perlu_reorder || 0) + ' Produk');
+
+        // 2. Loop Setiap Produk untuk Dibuatkan Chart Sendiri
+        const eoqData = res.chart_eoq || [];
+
+        eoqData.forEach((item, index) => {
+            const chartId = `chart_item_${index}`;
+            const statusColor = item.stok_sekarang <= item.rop ? 'border-danger' : 'border-success';
+            const badgeStatus = item.stok_sekarang <= item.rop ? '<span class="badge bg-danger">REORDER</span>' : '<span class="badge bg-success">AMAN</span>';
+
+            // Tambahkan HTML Card untuk tiap produk
+            $('#chartContainer').append(`
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm border-0 h-100 ${statusColor}" style="border-left: 5px solid !important;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-0">${item.nama}</h6>
+                                    <small class="text-muted">Stok: ${item.stok_sekarang} Kg</small>
+                                </div>
+                                ${badgeStatus}
+                            </div>
+                            <div style="height: 200px;">
+                                <canvas id="${chartId}"></canvas>
+                            </div>
+                            <div class="mt-3 pt-2 border-top">
+                                <small class="d-block">Saran Belanja (EOQ): <b>${item.eoq} Kg</b></small>
+                                <small class="d-block">Batas Reorder (ROP): <b>${item.rop} Kg</b></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            // Buat Chart Batang Tunggal untuk produk ini
+            const ctx = document.getElementById(chartId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Stok', 'ROP', 'EOQ'],
+                    datasets: [{
+                        label: 'Jumlah (Kg)',
+                        data: [item.stok_sekarang, item.rop, item.eoq],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)', // Biru (Stok)
+                            'rgba(255, 159, 64, 0.7)', // Oranye (ROP)
+                            'rgba(75, 192, 192, 0.7)'  // Hijau (EOQ)
+                        ],
+                        borderRadius: 4
+                    }]
                 },
-                error: function(xhr) {
-                    console.error('Terjadi kesalahan saat mengambil data:', xhr.responseText);
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         });
-    </script>
-@endsection
-
-@section('styles')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .card {
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: scale(1.05);
-        }
-
-        .card-title {
-            color: #fff;
-            font-weight: bold;
-            font-size: 2rem;
-        }
-    </style>
+    });
+});
+</script>
 @endsection

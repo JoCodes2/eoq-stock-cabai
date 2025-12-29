@@ -14,7 +14,7 @@
             @auth
                 <a href="{{ url('/form-request') }}"
                     class="{{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
-                    Profil
+                    Ajukan Permintaan
                 </a>
             @endauth
 
@@ -54,7 +54,7 @@
         @auth
             <a href="{{ url('/form-request') }}"
                 class="block py-2 {{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
-                Profil
+                Ajukan Permintaan
             </a>
         @endauth
 

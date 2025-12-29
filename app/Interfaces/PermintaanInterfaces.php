@@ -12,4 +12,5 @@ interface PermintaanInterfaces
     public function getByNota($nomor_permintaan);
     public function updateStatus($id, $status);
     public function deleteData($id);
+    public function getAllStokKeluar();
 }

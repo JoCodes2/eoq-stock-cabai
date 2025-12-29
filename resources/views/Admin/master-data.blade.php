@@ -255,7 +255,7 @@
             }
             function confirmAlert(msg, callback) {
                 Swal.fire({
-                    title: 'Apakah anda yakin?', text: msg, icon: 'warning',
+                    title: 'Apakah anda yakin?', text: msg,
                     showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
                     confirmButtonText: 'Ya, Hapus!', cancelButtonText: 'Batal'
                 }).then((result) => { if (result.isConfirmed) callback(); });

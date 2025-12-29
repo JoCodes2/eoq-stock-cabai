@@ -4,8 +4,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tani Cabai</title>
+
+    <meta name="description" content="" />
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>TaniCabai</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="{{ asset('assets/assets/img/tanicabai.jpeg') }}" />
     <script>
         let appUrl = '{{ env('APP_URL') }}';
     </script>
@@ -97,11 +102,12 @@
                     method: 'POST',
                     dataType: "json",
                     success: function(response) {
-                        console.log('Response diterima:', response);
 
                         if (response.code === 200) {
                             showAlert('Anda berhasil logout!', 'success');
-                            location.reload();
+                            setTimeout(function() {
+                                window.location.href = "/";
+                            }, 1000);
                         } else {
                             showAlert('Terjadi kesalahan!', 'error');
                         }
