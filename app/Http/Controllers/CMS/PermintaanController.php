@@ -50,4 +50,8 @@ class PermintaanController extends Controller
     {
         return $this->permintaanRepository->deleteData($id);
     }
+    public function getAllStockOut()
+    {
+        return $this->permintaanRepository->getAllStokKeluar();
+    }
 }

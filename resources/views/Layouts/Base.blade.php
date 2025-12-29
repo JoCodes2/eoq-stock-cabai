@@ -16,14 +16,16 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
     />
 
-    <title>SCM</title>
+    <title>Tani Cabai</title>
 
     <meta name="description" content="" />
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('assets/assets/scm.png') }}" />
-
+    <link rel="icon" type="image/jpeg" href="{{ asset('assets/assets/img/tanicabai.jpeg') }}" />
+    <script>
+        let appUrl = "{{ env('APP_URL') }}";
+    </script>
     @include('Layouts.Styles')
   </head>
 

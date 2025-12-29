@@ -38,3 +38,61 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+    .stepper-item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+    .stepper-item::before {
+        position: absolute;
+        content: "";
+        border-bottom: 2px solid #ccc;
+        width: 100%;
+        top: 20px;
+        left: -50%;
+        z-index: 0;
+    }
+    .stepper-item:first-child::before { content: none; }
+    .step-counter {
+        position: relative;
+        z-index: 5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ccc;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+    .stepper-item.active .step-counter { background-color: #48ABF7; }
+    .stepper-item.completed .step-counter { background-color: #28a745; }
+    .stepper-item.completed::before { border-color: #28a745; }
+    .step-name { font-size: 12px; color: #666; font-weight: 500; }
+    .stepper-item.active .step-name { color: #48ABF7; font-weight: bold; }
+</style>
+<style>
+    /* Styling agar tabel terlihat lebih bersih */
+    #tableStokKeluar thead th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        padding: 15px 10px;
+    }
+    #tableStokKeluar tbody td {
+        vertical-align: middle;
+        padding: 12px 10px;
+        border-color: #f8f9fa;
+    }
+</style>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CMS\AuthController;
 use App\Http\Controllers\CMS\DashboardController;
+use App\Http\Controllers\CMS\EOQController;
 use App\Http\Controllers\CMS\MasterController;
 use App\Http\Controllers\CMS\PermintaanController;
 use App\Http\Controllers\CMS\ProductController;
@@ -31,18 +32,14 @@ Route::prefix('v1/user')->controller(UserController::class)->group(function () {
     Route::delete('/delete/{id}', 'deleteData');
 });
 
-Route::prefix('v1/permintaan')->controller(PermintaanController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::post('/create', 'store');
-    Route::get('/show/{id}', 'show');
-    Route::get('/nota/{nota}', 'showByNota');
-    Route::patch('/update-status/{id}', 'updateStatus');
-    Route::delete('/delete/{id}', 'destroy');
-});
+
 Route::middleware(['auth', 'web'])->group(function () {
     // pemebli
     Route::get('/form-request', function () {
         return view('Pages.form-request');
+    })->middleware('role:pembeli');
+    Route::get('/data-request', function () {
+        return view('Pages.data-request');
     })->middleware('role:pembeli');
     // admin
     Route::get('/home', function () {
@@ -56,6 +53,29 @@ Route::middleware(['auth', 'web'])->group(function () {
     });
     Route::get('/stok-masuk', function () {
         return view('Admin.stok-masuk');
+    });
+    Route::get('/request', function () {
+        return view('Admin.Request');
+    });
+    Route::get('/stok-keluar', function () {
+        return view('Admin.stock-out');
+    });
+    Route::get('/eoq', function () {
+        return view('Admin.eoq');
+    });
+    Route::get('/v1/eoq/config', [EOQController::class, 'index']);
+
+    Route::get('/v1/dashboard/chart-eoq', [EOQController::class, 'getDashboardChart']);
+    Route::post('/v1/eoq/config/update/{id}', [EOQController::class, 'updateConfig']);
+    Route::get('/v1/eoq/calculate/{master_id}', [EOQController::class, 'calculate']);
+    Route::prefix('v1/permintaan')->controller(PermintaanController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/create', 'store');
+        Route::get('/show/{id}', 'show');
+        Route::get('/nota/{nota}', 'showByNota');
+        Route::patch('/update-status/{id}', 'updateStatus');
+        Route::delete('/delete/{id}', 'destroy');
+        Route::get('/stock-out', 'getAllStockOut');
     });
     Route::prefix('v1')->group(function () {
 

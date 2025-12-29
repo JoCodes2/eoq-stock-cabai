@@ -22,7 +22,7 @@
 
             <ul class="menu-inner py-1">
                 <li class="menu-item {{ request()->is('home') ? 'active' : '' }}">
-                    <a href="/" class="menu-link">
+                    <a href="/home" class="menu-link">
                         <i class="menu-icon fa-solid fa-house"></i>
                         <div data-i18n="Analytics">Dashboard</div>
                     </a>
@@ -45,17 +45,24 @@
                         <div data-i18n="Analytics">Stok Masuk</div>
                     </a>
                 </li>
-                {{-- <li class="menu-item {{ request()->is('form-request') ? 'active' : '' }}">
-                    <a href="/form-request" class="menu-link">
+                <li class="menu-item {{ request()->is('request') ? 'active' : '' }}">
+                    <a href="/request" class="menu-link">
                         <i class="menu-icon fa-solid fa-list"></i>
-                        <div data-i18n="Analytics">form request</div>
+                        <div data-i18n="Analytics">Permintaan</div>
                     </a>
-                </li> --}}
-
-
-
-
-
+                </li>
+                <li class="menu-item {{ request()->is('stok-keluar') ? 'active' : '' }}">
+                    <a href="/stok-keluar" class="menu-link">
+                        <i class="menu-icon fa-solid fa-box-open"></i>
+                        <div data-i18n="Analytics">Stok Keluar</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->is('eoq') ? 'active' : '' }}">
+                    <a href="/eoq" class="menu-link">
+                        <i class="menu-icon fa-solid fa-square-root-variable"></i>
+                        <div data-i18n="Analytics">Pengaturan EOQ</div>
+                    </a>
+                </li>
             </ul>
         </aside>
         <!-- / Menu -->
