@@ -90,7 +90,7 @@
     <script>
         $(document).ready(function() {
             function sendAjaxRequest() {
-                 const formData = {
+                const formData = {
                     _token: $('input[name="_token"]').val(),
                     nama: $('#nama').val(),
                     email: $('#email').val(),
@@ -105,10 +105,10 @@
                     .html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
 
                 $.ajax({
-                    url: `${appUrl}/v1/user/create`,
-                    method: "POST",
+                    url: '/v1/user/create',
+                    type: 'POST', // ✅ pakai type (paling aman)
                     data: formData,
-                    dataType: "json",
+                    dataType: 'json',
                     success: function(response) {
                         console.log(response);
 
