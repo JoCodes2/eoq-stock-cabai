@@ -17,7 +17,9 @@ class EOQController extends Controller
     {
         $totalModal = StokmasukModel::sum('total_harga') ?? 0;
 
-        $salesData = ItemPermintaanModel::join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
+        $salesData = ItemPermintaanModel::join('permintaan', 'item_permintaan.permintaan_id', '=', 'permintaan.id')
+            ->join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
+            ->where('permintaan.status', 'selesai')
             ->select(
                 DB::raw('SUM(item_permintaan.total_harga) as total_omzet'),
                 DB::raw('SUM(item_permintaan.jumlah * master_data.harga_beli_terakhir) as total_hpp')
@@ -25,7 +27,17 @@ class EOQController extends Controller
 
         $omzet = (float) ($salesData->total_omzet ?? 0);
         $hpp = (float) ($salesData->total_hpp ?? 0);
-        $profit = $omzet - $hpp;
+        $grossProfit = $omzet - $hpp;
+
+        $eoqCosts = EOQModel::select(
+            DB::raw('SUM(biaya_penyimpanan) as total_holding_cost'),
+            DB::raw('SUM(biaya_pemesanan) as total_ordering_cost')
+        )->first();
+
+        $totalBiayaPenyimpanan = (float) ($eoqCosts->total_holding_cost ?? 0);
+        $totalBiayaPemesanan = (float) ($eoqCosts->total_ordering_cost ?? 0);
+
+        $netProfit = $grossProfit - ($totalBiayaPenyimpanan + $totalBiayaPemesanan);
 
         $perluReorder = 0;
         $eoqAnalytics = EOQModel::with('masterData')
@@ -35,7 +47,6 @@ class EOQController extends Controller
                 $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
                 $eoq = (float) ($item->nilai_eoq ?? 0);
 
-                // Cek jika stok sudah di bawah atau sama dengan ROP
                 if ($stokRiil <= $rop && $item->terakhir_dihitung != null) {
                     $perluReorder++;
                 }
@@ -52,7 +63,10 @@ class EOQController extends Controller
             'summary' => [
                 'modal' => (float) $totalModal,
                 'omzet' => $omzet,
-                'keuntungan' => $profit,
+                'biaya_penyimpanan' => $totalBiayaPenyimpanan,
+                'biaya_pemesanan' => $totalBiayaPemesanan,
+                'keuntungan_kotor' => $grossProfit,
+                'keuntungan_bersih' => $netProfit,
                 'perlu_reorder' => $perluReorder
             ],
             'chart_eoq' => $eoqAnalytics

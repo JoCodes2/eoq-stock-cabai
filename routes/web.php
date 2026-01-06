@@ -24,6 +24,7 @@ Route::get('/register', function () {
     return view('Auth.register');
 });
 Route::post('v1/login', [AuthController::class, 'login'])->name('login');
+
 Route::prefix('v1/user')->controller(UserController::class)->group(function () {
     Route::get('/', 'getAllData');
     Route::post('/create', 'createData');

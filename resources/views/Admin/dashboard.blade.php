@@ -2,39 +2,70 @@
 
 @section('content')
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold">TOTAL MODAL</small>
-            <h4 id="txt_modal" class="fw-bold text-primary">Rp 0</h4>
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <small class="text-muted fw-bold uppercase">Total Modal</small>
+            <h4 id="txt_modal" class="fw-bold text-dark">Rp 0</h4>
+            <div class="progress mt-2" style="height: 4px;">
+                <div class="progress-bar bg-dark" style="width: 100%"></div>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold">TOTAL OMZET</small>
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <small class="text-muted fw-bold">TOTAL OMZET (SELESAI)</small>
             <h4 id="txt_omzet" class="fw-bold text-success">Rp 0</h4>
+            <small class="text-[10px] text-muted">*Hanya pesanan berstatus selesai</small>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold">KEUNTUNGAN</small>
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <small class="text-muted fw-bold">KEUNTUNGAN BERSIH</small>
             <h4 id="txt_profit" class="fw-bold text-info">Rp 0</h4>
+            <small id="txt_gross_profit" class="text-[10px] text-muted">Kotor: Rp 0</small>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold">STOK KRITIS</small>
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <small class="text-muted fw-bold">STOK KRITIS (ROP)</small>
             <h4 id="txt_reorder" class="fw-bold text-danger">0 Produk</h4>
+            <small class="text-[10px] text-muted">Perlu reorder segera</small>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted fw-bold">TOTAL BIAYA PENYIMPANAN</small>
+                    <h5 id="txt_holding" class="fw-bold text-warning mb-0">Rp 0</h5>
+                </div>
+                <i class="fas fa-warehouse fa-2x text-warning opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted fw-bold">TOTAL BIAYA PEMESANAN</small>
+                    <h5 id="txt_ordering" class="fw-bold text-orange mb-0" style="color: #fd7e14;">Rp 0</h5>
+                </div>
+                <i class="fas fa-truck-loading fa-2x opacity-50" style="color: #fd7e14;"></i>
+            </div>
         </div>
     </div>
 </div>
 
 <hr>
-<h5 class="fw-bold mb-3"><i class="fa fa-chart-pie me-2"></i> Detail Analisis Stok Per Produk</h5>
+<h5 class="fw-bold mb-3"><i class="fa fa-chart-pie me-2 text-danger"></i> Analisis Stok & Titik Pesan (EOQ/ROP)</h5>
 
 <div class="row" id="chartContainer">
     <div class="col-12 text-center py-5" id="loader">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted">Memuat data analisis...</p>
+        <p class="mt-2 text-muted">Menganalisis data pasar dan stok...</p>
     </div>
 </div>
 @endsection
@@ -44,69 +75,89 @@
 <script>
 $(document).ready(function() {
     $.get('/v1/dashboard/chart-eoq', function(res) {
-        $('#loader').remove(); // Hapus loading
+        $('#loader').remove();
 
-        // 1. Update Widget Atas
         const summary = res.summary || {};
+
+        // 1. Update Widget Ringkasan Finansial
         $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
         $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
-        $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan || 0).toLocaleString('id-ID'));
+        $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan_bersih || 0).toLocaleString('id-ID'));
+        $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
+
+        // 2. Update Widget Biaya Operasional
+        $('#txt_holding').text('Rp ' + parseFloat(summary.biaya_penyimpanan || 0).toLocaleString('id-ID'));
+        $('#txt_ordering').text('Rp ' + parseFloat(summary.biaya_pemesanan || 0).toLocaleString('id-ID'));
+
+        // 3. Update Status Reorder
         $('#txt_reorder').text((summary.perlu_reorder || 0) + ' Produk');
 
-        // 2. Loop Setiap Produk untuk Dibuatkan Chart Sendiri
+        // 4. Render Charts Produk
         const eoqData = res.chart_eoq || [];
-
         eoqData.forEach((item, index) => {
             const chartId = `chart_item_${index}`;
-            const statusColor = item.stok_sekarang <= item.rop ? 'border-danger' : 'border-success';
-            const badgeStatus = item.stok_sekarang <= item.rop ? '<span class="badge bg-danger">REORDER</span>' : '<span class="badge bg-success">AMAN</span>';
+            const isCritical = item.stok_sekarang <= item.rop;
+            const statusColor = isCritical ? 'border-danger' : 'border-success';
+            const badgeStatus = isCritical
+                ? '<span class="badge bg-danger animate-pulse">REORDER</span>'
+                : '<span class="badge bg-success">STOK AMAN</span>';
 
-            // Tambahkan HTML Card untuk tiap produk
             $('#chartContainer').append(`
                 <div class="col-md-4 mb-4">
-                    <div class="card shadow-sm border-0 h-100 ${statusColor}" style="border-left: 5px solid !important;">
+                    <div class="card shadow-sm border-0 h-100 ${statusColor}" style="border-top: 4px solid !important;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h6 class="fw-bold mb-0">${item.nama}</h6>
-                                    <small class="text-muted">Stok: ${item.stok_sekarang} Kg</small>
+                                    <h6 class="fw-bold mb-0 text-uppercase">${item.nama}</h6>
+                                    <small class="text-muted">Stok Saat Ini: <b>${item.stok_sekarang} Kg</b></small>
                                 </div>
                                 ${badgeStatus}
                             </div>
-                            <div style="height: 200px;">
+                            <div style="height: 180px;">
                                 <canvas id="${chartId}"></canvas>
                             </div>
-                            <div class="mt-3 pt-2 border-top">
-                                <small class="d-block">Saran Belanja (EOQ): <b>${item.eoq} Kg</b></small>
-                                <small class="d-block">Batas Reorder (ROP): <b>${item.rop} Kg</b></small>
+                            <div class="mt-3 p-2 bg-light rounded">
+                                <div class="d-flex justify-content-between text-[11px]">
+                                    <span>Saran Pembelian (EOQ)</span>
+                                    <span class="fw-bold text-primary">${item.eoq} Kg</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-[11px]">
+                                    <span>Titik Pesan (ROP)</span>
+                                    <span class="fw-bold text-orange">${item.rop} Kg</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             `);
 
-            // Buat Chart Batang Tunggal untuk produk ini
             const ctx = document.getElementById(chartId).getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['Stok', 'ROP', 'EOQ'],
                     datasets: [{
-                        label: 'Jumlah (Kg)',
                         data: [item.stok_sekarang, item.rop, item.eoq],
                         backgroundColor: [
-                            'rgba(54, 162, 235, 0.7)', // Biru (Stok)
-                            'rgba(255, 159, 64, 0.7)', // Oranye (ROP)
-                            'rgba(75, 192, 192, 0.7)'  // Hijau (EOQ)
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(75, 192, 192, 0.8)'
                         ],
-                        borderRadius: 4
+                        borderWidth: 0,
+                        borderRadius: 5
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { display: false }
+                        },
+                        x: { grid: { display: false } }
+                    }
                 }
             });
         });

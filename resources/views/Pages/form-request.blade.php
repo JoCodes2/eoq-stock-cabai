@@ -243,14 +243,17 @@
 
             $('#submitBtn').prop('disabled', true).text('SEDANG MENGIRIM...');
 
-            $.ajax({
+           $.ajax({
                 url: '/v1/permintaan/create',
                 type: 'POST',
                 data: JSON.stringify(payload),
                 contentType: 'application/json',
                 headers: { 'X-CSRF-TOKEN': $('input[name="_token"]').val() },
                 success: function(response) {
-                    showInvoice(response.data);
+                    showAlert('Pesanan berhasil dibuat!', 'success');
+                    setTimeout(function() {
+                        showInvoice(response.data);
+                    }, 800);
                 },
                 error: function(xhr) {
                     $('#submitBtn').prop('disabled', false).text('🚀 KIRIM SEKARANG');
@@ -294,7 +297,7 @@
                         </div>
                         <div class="p-6 bg-gray-50 flex flex-col gap-3">
                             <button id="download-invoice" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg">SIMPAN NOTA</button>
-                            <a href="https://wa.me/6287810216949?text=Halo Admin, saya {{ $userName }} konfirmasi pesanan ${data.nomor_permintaan}." target="_blank" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-center shadow-lg">HUBUNGI ADMIN</a>
+                            <a href="https://wa.me/6285656735557?text=Halo Admin, saya {{ $userName }} konfirmasi pesanan ${data.nomor_permintaan}." target="_blank" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-center shadow-lg">HUBUNGI ADMIN</a>
                             <button onclick="window.location.reload()" class="text-gray-400 text-xs font-bold py-2">TUTUP</button>
                         </div>
                     </div>

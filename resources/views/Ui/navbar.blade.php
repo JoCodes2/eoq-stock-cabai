@@ -12,10 +12,12 @@
                 Beranda
             </a>
             @auth
+            @if(auth()->user()->role === 'pembeli')
                 <a href="{{ url('/form-request') }}"
                     class="{{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
                     Ajukan Permintaan
                 </a>
+            @endif
             @endauth
 
             <div class="flex space-x-2 ml-4">
@@ -52,10 +54,12 @@
             Beranda
         </a>
         @auth
-            <a href="{{ url('/form-request') }}"
-                class="block py-2 {{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
-                Ajukan Permintaan
-            </a>
+            @if(auth()->user()->role === 'pembeli')
+                <a href="{{ url('/form-request') }}"
+                    class="{{ Request::is('form-request') ? 'text-red-700 font-semibold' : 'text-gray-700 hover:text-red-700' }}">
+                    Ajukan Permintaan
+                </a>
+            @endif
         @endauth
 
         <div class="flex space-x-2 mt-2">
