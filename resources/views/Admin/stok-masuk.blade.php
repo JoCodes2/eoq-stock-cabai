@@ -20,8 +20,8 @@
                             <th>Master Data Id</th>
                             <th>Jumlah</th>
                             <th>Harga Beli Satuan</th>
-                            <th>Nama Supplier</th>
                             <th>Total Harga</th>
+                            <th>Nama Supplier</th>
                             <th>No Invoice</th>
                             <th>Aksi</th>
                         </tr>
@@ -52,7 +52,8 @@
                         <!-- Kode Stok Masuk -->
                         <div class="mb-3">
                             <label class="form-label">Kode Stok Masuk</label>
-                            <input type="text" name="kode_stok_masuk" id="kode_stok_masuk" class="form-control" readonly value="otomatis">
+                            <input type="text" name="kode_stok_masuk" id="kode_stok_masuk" class="form-control" readonly
+                                value="otomatis">
                             <small class="text-danger" id="kode_stok_masuk-error"></small>
                         </div>
 
