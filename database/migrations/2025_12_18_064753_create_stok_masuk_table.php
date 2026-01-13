@@ -18,11 +18,10 @@ return new class extends Migration
             $table->foreignUuid('master_data_id')
                 ->constrained('master_data')
                 ->cascadeOnDelete();
-
-            $table->decimal('jumlah', 10, 2);
             $table->decimal('harga_beli_satuan', 12, 2);
             $table->string('nama_supplier');
-            $table->decimal('total_harga', 14, 2);
+            $table->decimal('jumlah', 15, 2)->change();
+            $table->decimal('total_harga', 20, 2)->change();
             $table->string('no_invoice')->nullable();
             $table->timestamps();
         });

@@ -25,6 +25,10 @@ class StokmasukModel extends Model
         'updated_at',
 
     ];
+    protected $casts = [
+        'total_harga' => 'double',
+        'jumlah' => 'double',
+    ];
 
     public function masterdata(): BelongsTo
     {
