@@ -37,7 +37,8 @@ class StokmasukRepositories implements StokmasukInterfaces
         DB::beginTransaction();
 
         try {
-            $total_harga = bcmul($request->jumlah, $request->harga_beli_satuan, 2);
+            // Hitung total harga otomatis
+            $total_harga = $request->jumlah * $request->harga_beli_satuan;
 
             $kodeOtomatis = 'SM-' . date('Ymd') . '-' . Str::random(4);
 

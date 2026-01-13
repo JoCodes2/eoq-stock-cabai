@@ -24,40 +24,42 @@ class StokmasukRequest extends FormRequest
      */
     public function rules()
     {
-        $rules = [
-            'kode_stok_masuk'   => 'required|string|max:100',
+        return [
+            // 'kode_stok_masuk' biasanya di-generate di controller,
+            // namun jika dikirim dari input, tetap gunakan aturan ini.
+            'kode_stok_masuk'   => 'nullable|string|max:100',
             'master_data_id'    => 'required|uuid|exists:master_data,id',
-            'jumlah'            => 'required|integer|min:1',
-            'harga_beli_satuan' => 'required|numeric|min:0',
+
+            // Gunakan numeric karena di migrasi menggunakan decimal(10,2)
+            // Batas max 99999999.99 (sesuai decimal 10,2)
+            'jumlah'            => 'required|numeric|min:1|max:99999999',
+
+            // Batas max sesuai decimal(12,2) di database
+            'harga_beli_satuan' => 'required|numeric|min:0|max:9999999999',
+
             'nama_supplier'     => 'required|string|max:150',
             'no_invoice'        => 'nullable|string|max:100',
-
         ];
-        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'kode_stok_masuk.required'   => 'Kode stok masuk wajib diisi.',
-            'kode_stok_masuk.max'        => 'Kode stok masuk maksimal 100 karakter.',
-
             'master_data_id.required'    => 'Produk wajib dipilih.',
-            'master_data_id.uuid'        => 'Format ID produk tidak valid.',
             'master_data_id.exists'      => 'Produk tidak ditemukan.',
 
             'jumlah.required'            => 'Jumlah stok wajib diisi.',
-            'jumlah.integer'             => 'Jumlah stok harus berupa angka.',
+            'jumlah.numeric'             => 'Jumlah stok harus berupa angka (boleh desimal).',
             'jumlah.min'                 => 'Jumlah stok minimal 1.',
+            'jumlah.max'                 => 'Jumlah stok terlalu besar, maksimal 99.999.999.',
 
             'harga_beli_satuan.required' => 'Harga beli satuan wajib diisi.',
             'harga_beli_satuan.numeric'  => 'Harga beli satuan harus berupa angka.',
             'harga_beli_satuan.min'      => 'Harga beli satuan tidak boleh kurang dari 0.',
+            'harga_beli_satuan.max'      => 'Harga beli terlalu besar.',
 
             'nama_supplier.required'     => 'Nama supplier wajib diisi.',
             'nama_supplier.max'          => 'Nama supplier maksimal 150 karakter.',
-
-            'no_invoice.max'              => 'Nomor invoice maksimal 100 karakter.',
         ];
     }
 
