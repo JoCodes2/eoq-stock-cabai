@@ -38,40 +38,48 @@ class EOQController extends Controller
         $nilaiStokTotal = (float) ($stokData->nilai_stok_total ?? 0);
 
         // 3. PERHITUNGAN BIAYA YANG BENAR:
-        // Ambil rata-rata persentase biaya penyimpanan (dalam %)
-        $avgEOQ = EOQModel::select(
-            DB::raw('AVG(biaya_penyimpanan) as avg_biaya_simpan_percent')
-        )->first();
+        // 3A. Biaya Penyimpanan - CARA YANG LEBIH AKURAT
 
-        // Asumsi: biaya penyimpanan dalam EOQ adalah % per TAHUN
-        // Konversi ke biaya bulanan (lebih realistis untuk dashboard)
-        $persentasePenyimpananPerTahun = (float) ($avgEOQ->avg_biaya_simpan_percent ?? 0);
+        // OPTION 1: Hitung TOTAL biaya penyimpanan dari semua produk
+        // Asumsi: biaya_penyimpanan di tabel EOQ adalah NOMINAL per tahun
+        $totalBiayaPenyimpananTahunan = EOQModel::sum('biaya_penyimpanan');
 
-        // JIKA biaya_penyimpanan dalam bentuk nominal (bukan persentase)
-        // Cek nilai tipikal: jika > 100, kemungkinan nominal, jika <= 100 kemungkinan persentase
-        if ($persentasePenyimpananPerTahun > 100) {
-            // Jika nominal, konversi ke persentase dari nilai stok
-            $biayaPenyimpananAktual = $persentasePenyimpananPerTahun / 12; // Jadi bulanan
-        } else {
-            // Jika persentase, hitung dari nilai stok
-            $biayaPenyimpananAktual = ($nilaiStokTotal * $persentasePenyimpananPerTahun / 100) / 12;
-        }
+        // Konversi ke bulanan untuk dashboard
+        $biayaPenyimpananAktual = $totalBiayaPenyimpananTahunan / 12;
 
-        // Batasi biaya penyimpanan maksimal 10% dari omzet (logika bisnis)
-        $maxPenyimpanan = $omzet * 0.10;
-        $biayaPenyimpananAktual = min($biayaPenyimpananAktual, $maxPenyimpanan);
+        // OPTION 2: Jika ingin menghitung berdasarkan persentase
+        // $avgPersentasePenyimpanan = EOQModel::avg('biaya_penyimpanan');
+        // $biayaPenyimpananAktual = ($nilaiStokTotal * $avgPersentasePenyimpanan / 100) / 12;
 
-        // 4. Biaya Pemesanan (lebih realistis)
-        // Hitung berdasarkan jumlah transaksi pemesanan stok
-        $jumlahPemesanan = StokmasukModel::count();
+        // 3B. Biaya Pemesanan
+        // Hitung berdasarkan jumlah transaksi pemesanan stok BULAN INI
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $jumlahPemesananBulanIni = StokmasukModel::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+        $jumlahPemesananBulanIni = max($jumlahPemesananBulanIni, 1); // Minimal 1 untuk menghindari 0
+
+        // Ambil rata-rata biaya pemesanan
         $avgBiayaPesan = EOQModel::avg('biaya_pemesanan') ?? 0;
 
-        // Biaya pemesanan per transaksi
-        $biayaPemesananAktual = $avgBiayaPesan * $jumlahPemesanan;
+        // Biaya pemesanan bulan ini
+        $biayaPemesananAktual = $avgBiayaPesan * $jumlahPemesananBulanIni;
+
+        // 4. Validasi Biaya
+        // Biaya penyimpanan tidak boleh lebih dari 5% dari omzet (untuk bisnis sehat)
+        $maxPenyimpanan = $omzet * 0.05;
+        $biayaPenyimpananAktual = min($biayaPenyimpananAktual, $maxPenyimpanan);
+
+        // Biaya pemesanan tidak boleh lebih dari 3% dari omzet
+        $maxPemesanan = $omzet * 0.03;
+        $biayaPemesananAktual = min($biayaPemesananAktual, $maxPemesanan);
 
         // 5. Perhitungan Profit
         $keuntunganKotor = $omzet - $hpp;
         $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
+
+        // Pastikan keuntungan bersih tidak negatif
+        $keuntunganBersih = max($keuntunganBersih, 0);
 
         // 6. Modal (investasi stok)
         $modal = (float) StokmasukModel::sum('total_harga');
@@ -92,18 +100,34 @@ class EOQController extends Controller
             ];
         });
 
+        // 8. Tambahkan data tambahan untuk debug dan informasi
+        $totalBiayaPenyimpananTahunan = $biayaPenyimpananAktual * 12;
+        $avgBiayaPenyimpananPerProduk = EOQModel::count() > 0 ? $totalBiayaPenyimpananTahunan / EOQModel::count() : 0;
+
         return response()->json([
             'summary' => [
                 'modal_investasi' => $modal,
                 'omzet' => $omzet,
                 'hpp' => $hpp,
                 'keuntungan_kotor' => $keuntunganKotor,
-                'keuntungan_bersih' => max($keuntunganBersih, 0), // Tidak boleh negatif
+                'keuntungan_bersih' => $keuntunganBersih,
                 'biaya_penyimpanan' => $biayaPenyimpananAktual,
                 'biaya_pemesanan' => $biayaPemesananAktual,
                 'perlu_reorder' => $perluReorder,
                 'margin_kotor' => ($omzet > 0) ? round(($keuntunganKotor / $omzet) * 100, 2) : 0,
                 'margin_bersih' => ($omzet > 0) ? round(($keuntunganBersih / $omzet) * 100, 2) : 0,
+
+                // Data tambahan untuk debugging
+                'debug_info' => [
+                    'total_biaya_penyimpanan_tahunan' => $totalBiayaPenyimpananTahunan,
+                    'avg_biaya_penyimpanan_per_produk' => $avgBiayaPenyimpananPerProduk,
+                    'jumlah_produk_eoq' => EOQModel::count(),
+                    'jumlah_pemesanan_bulan_ini' => $jumlahPemesananBulanIni,
+                    'avg_biaya_pesan' => $avgBiayaPesan,
+                    'nilai_stok_total' => $nilaiStokTotal,
+                    'biaya_penyimpanan_percent_of_omzet' => ($omzet > 0) ? round(($biayaPenyimpananAktual / $omzet) * 100, 4) : 0,
+                    'biaya_pemesanan_percent_of_omzet' => ($omzet > 0) ? round(($biayaPemesananAktual / $omzet) * 100, 4) : 0,
+                ]
             ],
             'chart_eoq' => $eoqAnalytics
         ]);
