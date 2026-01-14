@@ -203,11 +203,7 @@
                     </div>
 
                     <div class="pt-4 flex flex-col gap-2">
-                        <a href="https://wa.me/6287810216949?text=Konfirmasi pesanan ${data.nomor_permintaan}"
-                           target="_blank"
-                           class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-center text-xs shadow-lg active:scale-95 transition">
-                           <i class="fab fa-whatsapp mr-2"></i> HUBUNGI ADMIN
-                        </a>
+                        <a href="https://wa.me/6285656735557?text=Halo Admin, saya {{ $userName }} konfirmasi pesanan ${data.nomor_permintaan}." target="_blank" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-center shadow-lg">HUBUNGI ADMIN</a>
                         <button onclick="closeModal()" class="w-full text-gray-400 text-[10px] font-bold py-2">KEMBALI</button>
                     </div>
                 </div>

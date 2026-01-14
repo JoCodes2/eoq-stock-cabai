@@ -81,7 +81,7 @@ $(document).ready(function() {
 
         // 1. Update Widget Ringkasan Finansial
         $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
-        $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
+        $('#txt_omzet').text('Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
         $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan_bersih || 0).toLocaleString('id-ID'));
         $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
 
