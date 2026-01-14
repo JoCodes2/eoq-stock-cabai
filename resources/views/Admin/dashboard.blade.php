@@ -80,35 +80,33 @@ $(document).ready(function() {
         const summary = res.summary || {};
 
         // 1. Update Widget Ringkasan Finansial
-        // Menggunakan total_modal_stok agar sinkron dengan backend
-        $('#txt_modal').text('Rp ' + parseFloat(summary.total_modal_stok || 0).toLocaleString('id-ID'));
+        // Gunakan .modal atau .total_modal_stok sesuai key yang Anda kirim dari controller
+        $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
         $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
         $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan_bersih || 0).toLocaleString('id-ID'));
         $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
 
         // 2. Update Widget Biaya Operasional
-        // Mengambil dari dalam objek biaya_operasional sesuai struktur backend baru
-        const biayaOp = summary.biaya_operasional || {};
-        $('#txt_holding').text('Rp ' + parseFloat(biayaOp.penyimpanan || 0).toLocaleString('id-ID'));
-        $('#txt_ordering').text('Rp ' + parseFloat(biayaOp.pemesanan || 0).toLocaleString('id-ID'));
+        // Langsung ambil dari root summary jika backend mengirimnya sebagai flat value
+        $('#txt_holding').text('Rp ' + parseFloat(summary.biaya_penyimpanan || 0).toLocaleString('id-ID'));
+        $('#txt_ordering').text('Rp ' + parseFloat(summary.biaya_pemesanan || 0).toLocaleString('id-ID'));
 
         // 3. Update Status Reorder
         $('#txt_reorder').text((summary.perlu_reorder || 0) + ' Produk');
 
         // 4. Render Charts Produk
         const eoqData = res.chart_eoq || [];
-
-        // Bersihkan container sebelum render (mencegah duplikasi jika fungsi dipanggil ulang)
         $('#chartContainer').empty();
 
         if(eoqData.length === 0) {
-            $('#chartContainer').append('<div class="col-12 text-center text-muted">Tidak ada data analisis stok.</div>');
+            $('#chartContainer').append('<div class="col-12 text-center text-muted py-5">Tidak ada data analisis stok.</div>');
+            return;
         }
 
         eoqData.forEach((item, index) => {
             const chartId = `chart_item_${index}`;
-            // Menggunakan field 'status' yang sudah dikirim backend
-            const isCritical = item.status === 'Reorder';
+            // Logika kritis: stok lebih kecil atau sama dengan ROP
+            const isCritical = item.stok_sekarang <= item.rop;
             const statusColor = isCritical ? 'border-danger' : 'border-success';
             const badgeStatus = isCritical
                 ? '<span class="badge bg-danger animate-pulse">REORDER</span>'
@@ -121,7 +119,7 @@ $(document).ready(function() {
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <h6 class="fw-bold mb-0 text-uppercase">${item.nama}</h6>
-                                    <small class="text-muted">Stok Saat Ini: <b>${item.stok_sekarang} Kg</b></small>
+                                    <small class="text-muted">Stok Saat Ini: <b>${parseFloat(item.stok_sekarang).toLocaleString('id-ID')} Kg</b></small>
                                 </div>
                                 ${badgeStatus}
                             </div>
@@ -131,11 +129,11 @@ $(document).ready(function() {
                             <div class="mt-3 p-2 bg-light rounded">
                                 <div class="d-flex justify-content-between text-[11px] mb-1">
                                     <span>Saran Pembelian (EOQ)</span>
-                                    <span class="fw-bold text-primary">${item.eoq} Kg</span>
+                                    <span class="fw-bold text-primary">${parseFloat(item.eoq).toLocaleString('id-ID')} Kg</span>
                                 </div>
                                 <div class="d-flex justify-content-between text-[11px]">
                                     <span>Titik Pesan (ROP)</span>
-                                    <span class="fw-bold text-orange">${item.rop} Kg</span>
+                                    <span class="fw-bold text-orange">${parseFloat(item.rop).toLocaleString('id-ID')} Kg</span>
                                 </div>
                             </div>
                         </div>

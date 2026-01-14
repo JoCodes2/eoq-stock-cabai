@@ -15,16 +15,16 @@ class EOQController extends Controller
 {
     public function getDashboardChart()
     {
-        // 1. Total Modal Keseluruhan (Uang yang telah dibelanjakan untuk stok)
+        // 1. Total Modal (Uang yang sudah dibelanjakan untuk seluruh stok masuk)
         $totalModal = StokmasukModel::sum('total_harga') ?? 0;
 
-        // 2. Data Penjualan & HPP Aktual (Hanya dari transaksi yang statusnya 'selesai')
+        // 2. Data Penjualan Aktual (Hanya status 'selesai')
         $salesData = ItemPermintaanModel::join('permintaan', 'item_permintaan.permintaan_id', '=', 'permintaan.id')
             ->join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
             ->where('permintaan.status', 'selesai')
             ->select(
                 DB::raw('SUM(item_permintaan.total_harga) as total_omzet'),
-                // HPP dihitung dari (Jumlah terjual * Harga beli terakhir)
+                // HPP = Qty terjual * harga beli terakhir (modal barang yang laku saja)
                 DB::raw('SUM(item_permintaan.jumlah * master_data.harga_beli_terakhir) as total_hpp'),
                 DB::raw('SUM(item_permintaan.jumlah) as total_qty_terjual')
             )->first();
@@ -33,60 +33,50 @@ class EOQController extends Controller
         $hpp = (float) ($salesData->total_hpp ?? 0);
         $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0);
 
-        // 3. Keuntungan Kotor (Margin murni penjualan)
-        $grossProfit = $omzet - $hpp;
-
-        /** * CATATAN: Biaya EOQ adalah biaya PROYEKSI/ESTIMASI tahunan.
-         * Jika dimasukkan langsung ke Profit/Loss transaksi harian, angka akan berantakan (sering minus).
-         * Di sini kita hitung hanya sebagai informasi operasional, bukan pengurang profit utama.
-         */
+        // 3. Sinkronisasi Biaya Operasional (Penyimpanan & Pemesanan)
+        // Kita ambil rata-rata biaya per KG dari pengaturan EOQ
         $eoqRates = EOQModel::select(
-            DB::raw('AVG(biaya_penyimpanan) as avg_holding_rate'),
-            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as avg_ordering_rate')
+            DB::raw('AVG(biaya_penyimpanan) as holding_rate_per_kg'),
+            // Biaya pesan per KG = (biaya_pemesanan / nilai_eoq)
+            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as ordering_rate_per_kg')
         )->first();
 
-        // Estimasi biaya operasional berdasarkan qty yang benar-benar terjual
-        $estBiayaSimpan = $qtyTerjual * (float) ($eoqRates->avg_holding_rate ?? 0);
-        $estBiayaPesan  = $qtyTerjual * (float) ($eoqRates->avg_ordering_rate ?? 0);
+        // Biaya Aktual = Qty terjual * tarif biaya per kg
+        $totalBiayaPenyimpanan = $qtyTerjual * (float) ($eoqRates->holding_rate_per_kg ?? 0);
+        $totalBiayaPemesanan = $qtyTerjual * (float) ($eoqRates->ordering_rate_per_kg ?? 0);
 
-        // Keuntungan bersih (Setelah dikurangi estimasi biaya operasional per unit terjual)
-        $netProfit = $grossProfit - ($estBiayaSimpan + $estBiayaPesan);
+        // 4. Perhitungan Profit
+        $grossProfit = $omzet - $hpp;
+        $netProfit = $grossProfit - ($totalBiayaPenyimpanan + $totalBiayaPemesanan);
 
-        // 4. Analisis Stok & Chart EOQ
+        // 5. Status Stok & Reorder (untuk Chart)
         $perluReorder = 0;
-        $eoqAnalytics = EOQModel::with('masterData')
-            ->get()
-            ->map(function ($item) use (&$perluReorder) {
-                $stokRiil = (float) ($item->masterData->jumlah ?? 0);
-                $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
-                $eoq = (float) ($item->nilai_eoq ?? 0);
+        $eoqAnalytics = EOQModel::with('masterData')->get()->map(function ($item) use (&$perluReorder) {
+            $stokRiil = (float) ($item->masterData->jumlah ?? 0);
+            $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
 
-                // Cek kondisi reorder
-                if ($stokRiil <= $rop && $item->terakhir_dihitung != null) {
-                    $perluReorder++;
-                }
+            if ($stokRiil <= $rop && $item->terakhir_dihitung != null) {
+                $perluReorder++;
+            }
 
-                return [
-                    'nama' => $item->masterData->nama ?? 'Produk',
-                    'stok_sekarang' => $stokRiil,
-                    'rop' => $rop,
-                    'eoq' => $eoq,
-                    'status' => ($stokRiil <= $rop) ? 'Reorder' : 'Aman'
-                ];
-            });
+            return [
+                'nama' => $item->masterData->nama,
+                'stok_sekarang' => $stokRiil,
+                'rop' => $rop,
+                'eoq' => (float) $item->nilai_eoq,
+                'status' => ($stokRiil <= $rop) ? 'Reorder' : 'Aman'
+            ];
+        });
 
         return response()->json([
             'summary' => [
-                'total_modal_stok' => (float) $totalModal, // Pengeluaran beli stok
-                'omzet'            => $omzet,             // Total penjualan (Selesai)
-                'total_hpp'        => $hpp,               // Modal dari barang yang laku
-                'keuntungan_kotor' => $grossProfit,       // Omzet - HPP
-                'keuntungan_bersih' => $netProfit,        // Keuntungan setelah biaya unit
-                'biaya_operasional' => [
-                    'penyimpanan' => $estBiayaSimpan,
-                    'pemesanan'   => $estBiayaPesan
-                ],
-                'perlu_reorder'    => $perluReorder
+                'modal' => (float) $totalModal,
+                'omzet' => $omzet,
+                'biaya_penyimpanan' => $totalBiayaPenyimpanan,
+                'biaya_pemesanan' => $totalBiayaPemesanan,
+                'keuntungan_kotor' => $grossProfit,
+                'keuntungan_bersih' => $netProfit,
+                'perlu_reorder' => $perluReorder
             ],
             'chart_eoq' => $eoqAnalytics
         ]);
