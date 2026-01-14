@@ -104,7 +104,7 @@
                 <i class="fas fa-warehouse fa-2x text-warning opacity-50"></i>
             </div>
             <small class="text-[10px] text-muted d-block mt-2">
-                <i class="fas fa-info-circle me-1"></i> Biaya simpan stok per tahun (dari pengaturan EOQ)
+                <i class="fas fa-info-circle me-1"></i> Biaya simpan stok per tahun dibagi 12 bulan (dari pengaturan EOQ)
             </small>
         </div>
     </div>
