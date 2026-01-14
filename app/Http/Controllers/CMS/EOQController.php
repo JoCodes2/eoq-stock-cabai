@@ -29,44 +29,54 @@ class EOQController extends Controller
         $hpp = (float) ($salesData->total_hpp ?? 0);
         $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0);
 
-        // 2. Hitung Biaya Operasional yang SESUAI
-        // CARA 1: Hitung berdasarkan stok rata-rata (lebih akurat)
+        // 2. Nilai Stok Saat Ini
         $stokData = DB::table('master_data')
             ->select(
-                DB::raw('AVG(jumlah) as stok_rata_rata'),
                 DB::raw('SUM(jumlah * harga_beli_terakhir) as nilai_stok_total')
             )->first();
 
-        $stokRataRata = (float) ($stokData->stok_rata_rata ?? 0);
         $nilaiStokTotal = (float) ($stokData->nilai_stok_total ?? 0);
 
-        // Ambil rata-rata persentase biaya penyimpanan
+        // 3. PERHITUNGAN BIAYA YANG BENAR:
+        // Ambil rata-rata persentase biaya penyimpanan (dalam %)
         $avgEOQ = EOQModel::select(
-            DB::raw('AVG(biaya_penyimpanan) as biaya_simpan_persen'),
-            DB::raw('SUM(biaya_pemesanan) as total_biaya_pesan')
+            DB::raw('AVG(biaya_penyimpanan) as avg_biaya_simpan_percent')
         )->first();
 
-        // **PERHITUNGAN YANG BENAR:**
-        $biayaPenyimpananAktual = ($nilaiStokTotal * (float) ($avgEOQ->biaya_simpan_persen ?? 0)) / 100;
+        // Asumsi: biaya penyimpanan dalam EOQ adalah % per TAHUN
+        // Konversi ke biaya bulanan (lebih realistis untuk dashboard)
+        $persentasePenyimpananPerTahun = (float) ($avgEOQ->avg_biaya_simpan_percent ?? 0);
 
-        // Biaya pemesanan biasanya flat atau berdasarkan frekuensi order
+        // JIKA biaya_penyimpanan dalam bentuk nominal (bukan persentase)
+        // Cek nilai tipikal: jika > 100, kemungkinan nominal, jika <= 100 kemungkinan persentase
+        if ($persentasePenyimpananPerTahun > 100) {
+            // Jika nominal, konversi ke persentase dari nilai stok
+            $biayaPenyimpananAktual = $persentasePenyimpananPerTahun / 12; // Jadi bulanan
+        } else {
+            // Jika persentase, hitung dari nilai stok
+            $biayaPenyimpananAktual = ($nilaiStokTotal * $persentasePenyimpananPerTahun / 100) / 12;
+        }
+
+        // Batasi biaya penyimpanan maksimal 10% dari omzet (logika bisnis)
+        $maxPenyimpanan = $omzet * 0.10;
+        $biayaPenyimpananAktual = min($biayaPenyimpananAktual, $maxPenyimpanan);
+
+        // 4. Biaya Pemesanan (lebih realistis)
+        // Hitung berdasarkan jumlah transaksi pemesanan stok
         $jumlahPemesanan = StokmasukModel::count();
-        $biayaPemesananAktual = (float) ($avgEOQ->total_biaya_pesan ?? 0) * max($jumlahPemesanan, 1);
+        $avgBiayaPesan = EOQModel::avg('biaya_pemesanan') ?? 0;
 
-        // **ATAU CARA 2: Sederhana tapi realistis**
-        $biayaOperasionalSederhana = ($omzet * 0.05); // 5% dari omzet sebagai biaya operasional
+        // Biaya pemesanan per transaksi
+        $biayaPemesananAktual = $avgBiayaPesan * $jumlahPemesanan;
 
-        // 3. Perhitungan Profit
+        // 5. Perhitungan Profit
         $keuntunganKotor = $omzet - $hpp;
+        $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
 
-        // Pilih salah satu metode biaya operasional:
-        // $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
-        $keuntunganBersih = $keuntunganKotor - $biayaOperasionalSederhana; // Lebih realistis
-
-        // 4. Modal (investasi stok)
+        // 6. Modal (investasi stok)
         $modal = (float) StokmasukModel::sum('total_harga');
 
-        // 5. Data Chart EOQ
+        // 7. Data Chart EOQ
         $perluReorder = 0;
         $eoqAnalytics = EOQModel::with('masterData')->get()->map(function ($item) use (&$perluReorder) {
             $stokRiil = (float) ($item->masterData->jumlah ?? 0);
@@ -86,9 +96,9 @@ class EOQController extends Controller
             'summary' => [
                 'modal_investasi' => $modal,
                 'omzet' => $omzet,
-                'hpp' => $hpp, // Ditambahkan untuk debugging
+                'hpp' => $hpp,
                 'keuntungan_kotor' => $keuntunganKotor,
-                'keuntungan_bersih' => $keuntunganBersih,
+                'keuntungan_bersih' => max($keuntunganBersih, 0), // Tidak boleh negatif
                 'biaya_penyimpanan' => $biayaPenyimpananAktual,
                 'biaya_pemesanan' => $biayaPemesananAktual,
                 'perlu_reorder' => $perluReorder,
