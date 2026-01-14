@@ -15,30 +15,44 @@ class EOQController extends Controller
 {
     public function getDashboardChart()
     {
+        // 1. Total Modal Keseluruhan (Uang yang telah dibelanjakan untuk stok)
         $totalModal = StokmasukModel::sum('total_harga') ?? 0;
 
+        // 2. Data Penjualan & HPP Aktual (Hanya dari transaksi yang statusnya 'selesai')
         $salesData = ItemPermintaanModel::join('permintaan', 'item_permintaan.permintaan_id', '=', 'permintaan.id')
             ->join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
             ->where('permintaan.status', 'selesai')
             ->select(
                 DB::raw('SUM(item_permintaan.total_harga) as total_omzet'),
-                DB::raw('SUM(item_permintaan.jumlah * master_data.harga_beli_terakhir) as total_hpp')
+                // HPP dihitung dari (Jumlah terjual * Harga beli terakhir)
+                DB::raw('SUM(item_permintaan.jumlah * master_data.harga_beli_terakhir) as total_hpp'),
+                DB::raw('SUM(item_permintaan.jumlah) as total_qty_terjual')
             )->first();
 
         $omzet = (float) ($salesData->total_omzet ?? 0);
         $hpp = (float) ($salesData->total_hpp ?? 0);
+        $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0);
+
+        // 3. Keuntungan Kotor (Margin murni penjualan)
         $grossProfit = $omzet - $hpp;
 
-        $eoqCosts = EOQModel::select(
-            DB::raw('SUM(biaya_penyimpanan) as total_holding_cost'),
-            DB::raw('SUM(biaya_pemesanan) as total_ordering_cost')
+        /** * CATATAN: Biaya EOQ adalah biaya PROYEKSI/ESTIMASI tahunan.
+         * Jika dimasukkan langsung ke Profit/Loss transaksi harian, angka akan berantakan (sering minus).
+         * Di sini kita hitung hanya sebagai informasi operasional, bukan pengurang profit utama.
+         */
+        $eoqRates = EOQModel::select(
+            DB::raw('AVG(biaya_penyimpanan) as avg_holding_rate'),
+            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as avg_ordering_rate')
         )->first();
 
-        $totalBiayaPenyimpanan = (float) ($eoqCosts->total_holding_cost ?? 0);
-        $totalBiayaPemesanan = (float) ($eoqCosts->total_ordering_cost ?? 0);
+        // Estimasi biaya operasional berdasarkan qty yang benar-benar terjual
+        $estBiayaSimpan = $qtyTerjual * (float) ($eoqRates->avg_holding_rate ?? 0);
+        $estBiayaPesan  = $qtyTerjual * (float) ($eoqRates->avg_ordering_rate ?? 0);
 
-        $netProfit = $grossProfit - ($totalBiayaPenyimpanan + $totalBiayaPemesanan);
+        // Keuntungan bersih (Setelah dikurangi estimasi biaya operasional per unit terjual)
+        $netProfit = $grossProfit - ($estBiayaSimpan + $estBiayaPesan);
 
+        // 4. Analisis Stok & Chart EOQ
         $perluReorder = 0;
         $eoqAnalytics = EOQModel::with('masterData')
             ->get()
@@ -47,6 +61,7 @@ class EOQController extends Controller
                 $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
                 $eoq = (float) ($item->nilai_eoq ?? 0);
 
+                // Cek kondisi reorder
                 if ($stokRiil <= $rop && $item->terakhir_dihitung != null) {
                     $perluReorder++;
                 }
@@ -56,18 +71,22 @@ class EOQController extends Controller
                     'stok_sekarang' => $stokRiil,
                     'rop' => $rop,
                     'eoq' => $eoq,
+                    'status' => ($stokRiil <= $rop) ? 'Reorder' : 'Aman'
                 ];
             });
 
         return response()->json([
             'summary' => [
-                'modal' => (float) $totalModal,
-                'omzet' => $omzet,
-                'biaya_penyimpanan' => $totalBiayaPenyimpanan,
-                'biaya_pemesanan' => $totalBiayaPemesanan,
-                'keuntungan_kotor' => $grossProfit,
-                'keuntungan_bersih' => $netProfit,
-                'perlu_reorder' => $perluReorder
+                'total_modal_stok' => (float) $totalModal, // Pengeluaran beli stok
+                'omzet'            => $omzet,             // Total penjualan (Selesai)
+                'total_hpp'        => $hpp,               // Modal dari barang yang laku
+                'keuntungan_kotor' => $grossProfit,       // Omzet - HPP
+                'keuntungan_bersih' => $netProfit,        // Keuntungan setelah biaya unit
+                'biaya_operasional' => [
+                    'penyimpanan' => $estBiayaSimpan,
+                    'pemesanan'   => $estBiayaPesan
+                ],
+                'perlu_reorder'    => $perluReorder
             ],
             'chart_eoq' => $eoqAnalytics
         ]);

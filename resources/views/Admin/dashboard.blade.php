@@ -80,23 +80,35 @@ $(document).ready(function() {
         const summary = res.summary || {};
 
         // 1. Update Widget Ringkasan Finansial
-        $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
+        // Menggunakan total_modal_stok agar sinkron dengan backend
+        $('#txt_modal').text('Rp ' + parseFloat(summary.total_modal_stok || 0).toLocaleString('id-ID'));
         $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
         $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan_bersih || 0).toLocaleString('id-ID'));
         $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
 
         // 2. Update Widget Biaya Operasional
-        $('#txt_holding').text('Rp ' + parseFloat(summary.biaya_penyimpanan || 0).toLocaleString('id-ID'));
-        $('#txt_ordering').text('Rp ' + parseFloat(summary.biaya_pemesanan || 0).toLocaleString('id-ID'));
+        // Mengambil dari dalam objek biaya_operasional sesuai struktur backend baru
+        const biayaOp = summary.biaya_operasional || {};
+        $('#txt_holding').text('Rp ' + parseFloat(biayaOp.penyimpanan || 0).toLocaleString('id-ID'));
+        $('#txt_ordering').text('Rp ' + parseFloat(biayaOp.pemesanan || 0).toLocaleString('id-ID'));
 
         // 3. Update Status Reorder
         $('#txt_reorder').text((summary.perlu_reorder || 0) + ' Produk');
 
         // 4. Render Charts Produk
         const eoqData = res.chart_eoq || [];
+
+        // Bersihkan container sebelum render (mencegah duplikasi jika fungsi dipanggil ulang)
+        $('#chartContainer').empty();
+
+        if(eoqData.length === 0) {
+            $('#chartContainer').append('<div class="col-12 text-center text-muted">Tidak ada data analisis stok.</div>');
+        }
+
         eoqData.forEach((item, index) => {
             const chartId = `chart_item_${index}`;
-            const isCritical = item.stok_sekarang <= item.rop;
+            // Menggunakan field 'status' yang sudah dikirim backend
+            const isCritical = item.status === 'Reorder';
             const statusColor = isCritical ? 'border-danger' : 'border-success';
             const badgeStatus = isCritical
                 ? '<span class="badge bg-danger animate-pulse">REORDER</span>'
@@ -117,7 +129,7 @@ $(document).ready(function() {
                                 <canvas id="${chartId}"></canvas>
                             </div>
                             <div class="mt-3 p-2 bg-light rounded">
-                                <div class="d-flex justify-content-between text-[11px]">
+                                <div class="d-flex justify-content-between text-[11px] mb-1">
                                     <span>Saran Pembelian (EOQ)</span>
                                     <span class="fw-bold text-primary">${item.eoq} Kg</span>
                                 </div>
@@ -139,7 +151,7 @@ $(document).ready(function() {
                     datasets: [{
                         data: [item.stok_sekarang, item.rop, item.eoq],
                         backgroundColor: [
-                            'rgba(54, 162, 235, 0.8)',
+                            isCritical ? 'rgba(220, 53, 69, 0.8)' : 'rgba(54, 162, 235, 0.8)',
                             'rgba(255, 159, 64, 0.8)',
                             'rgba(75, 192, 192, 0.8)'
                         ],
@@ -154,9 +166,13 @@ $(document).ready(function() {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: { display: false }
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
                         },
-                        x: { grid: { display: false } }
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10, weight: 'bold' } }
+                        }
                     }
                 }
             });
