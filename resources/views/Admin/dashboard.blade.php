@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="row mb-4">
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold uppercase">Total Modal</small>
             <h4 id="txt_modal" class="fw-bold text-dark">Rp 0</h4>
@@ -11,21 +11,14 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold">TOTAL OMZET (SELESAI)</small>
             <h4 id="txt_omzet" class="fw-bold text-success">Rp 0</h4>
             <small class="text-[10px] text-muted">*Hanya pesanan berstatus selesai</small>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-0 shadow-sm p-3 h-100">
-            <small class="text-muted fw-bold">KEUNTUNGAN BERSIH</small>
-            <h4 id="txt_profit" class="fw-bold text-info">Rp 0</h4>
-            <small id="txt_gross_profit" class="text-[10px] text-muted">Kotor: Rp 0</small>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold">STOK KRITIS (ROP)</small>
             <h4 id="txt_reorder" class="fw-bold text-danger">0 Produk</h4>
