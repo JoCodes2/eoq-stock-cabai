@@ -43,8 +43,21 @@ class EOQController extends Controller
         // 3. Perhitungan Profit yang Akurat
         $keuntunganKotor = $omzet - $hpp;
         $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
+        // 5. Data Chart EOQ (Tetap sama)
+        $perluReorder = 0;
+        $eoqAnalytics = EOQModel::with('masterData')->get()->map(function ($item) use (&$perluReorder) {
+            $stokRiil = (float) ($item->masterData->jumlah ?? 0);
+            $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
+            if ($stokRiil <= $rop && $item->terakhir_dihitung != null) $perluReorder++;
 
-        // ... (logic chart_eoq tetap sama)
+            return [
+                'nama' => $item->masterData->nama,
+                'stok_sekarang' => $stokRiil,
+                'rop' => $rop,
+                'eoq' => (float) $item->nilai_eoq,
+                'status' => ($stokRiil <= $rop) ? 'Reorder' : 'Aman'
+            ];
+        });
 
         return response()->json([
             'summary' => [
