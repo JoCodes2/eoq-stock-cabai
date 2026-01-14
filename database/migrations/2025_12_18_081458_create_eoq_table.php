@@ -17,13 +17,13 @@ return new class extends Migration
                 ->constrained('master_data')
                 ->cascadeOnDelete()
                 ->unique();
-            $table->decimal('permintaan_tahunan', 10, 2);
+            $table->decimal('permintaan_tahunan', 20, 2);
             $table->decimal('biaya_pemesanan', 12, 2);
             $table->decimal('biaya_penyimpanan', 12, 2);
             $table->integer('waktu_tunggu_hari')->default(1);
-            $table->decimal('stok_aman', 10, 2)->default(0);
-            $table->decimal('nilai_eoq', 10, 2)->nullable();
-            $table->decimal('titik_pemesanan_ulang', 10, 2)->nullable();
+            $table->decimal('stok_aman', 20, 2)->default(0);
+            $table->decimal('nilai_eoq', 20, 2)->nullable();
+            $table->decimal('titik_pemesanan_ulang', 20, 2)->nullable();
 
             $table->date('terakhir_dihitung')->nullable();
             $table->boolean('aktif')->default(true);
