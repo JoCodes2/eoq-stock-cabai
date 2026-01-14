@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="row mb-4">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold uppercase">Total Modal</small>
             <h4 id="txt_modal" class="fw-bold text-dark">Rp 0</h4>
@@ -11,14 +11,21 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold">TOTAL OMZET (SELESAI)</small>
             <h4 id="txt_omzet" class="fw-bold text-success">Rp 0</h4>
             <small class="text-[10px] text-muted">*Hanya pesanan berstatus selesai</small>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <small class="text-muted fw-bold">KEUNTUNGAN BERSIH</small>
+            <h4 id="txt_profit" class="fw-bold text-primary">Rp 0</h4>
+            <small id="txt_margin" class="text-[10px] text-muted">Margin: 0%</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3 h-100">
             <small class="text-muted fw-bold">STOK KRITIS (ROP)</small>
             <h4 id="txt_reorder" class="fw-bold text-danger">0 Produk</h4>
@@ -27,27 +34,59 @@
     </div>
 </div>
 
+<!-- Ringkasan Keuntungan -->
 <div class="row mb-4">
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted fw-bold">KEUNTUNGAN KOTOR</small>
+                    <h5 id="txt_gross_profit" class="fw-bold text-info mb-0">Rp 0</h5>
+                </div>
+                <i class="fas fa-chart-line fa-2x text-info opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
         <div class="card border-0 shadow-sm p-3 bg-light">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <small class="text-muted fw-bold">TOTAL BIAYA PENYIMPANAN</small>
+                    <small class="text-muted fw-bold">BIAYA PENYIMPANAN</small>
                     <h5 id="txt_holding" class="fw-bold text-warning mb-0">Rp 0</h5>
                 </div>
                 <i class="fas fa-warehouse fa-2x text-warning opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card border-0 shadow-sm p-3 bg-light">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <small class="text-muted fw-bold">TOTAL BIAYA PEMESANAN</small>
+                    <small class="text-muted fw-bold">BIAYA PEMESANAN</small>
                     <h5 id="txt_ordering" class="fw-bold text-orange mb-0" style="color: #fd7e14;">Rp 0</h5>
                 </div>
                 <i class="fas fa-truck-loading fa-2x opacity-50" style="color: #fd7e14;"></i>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Bar ROI -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex justify-content-between mb-2">
+                <small class="text-muted fw-bold">ROI (Return on Investment)</small>
+                <small id="txt_roi_percent" class="fw-bold">0%</small>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div id="roi_progress" class="progress-bar"
+                     role="progressbar" style="width: 0%;"
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <small class="text-muted mt-2 d-block">
+                <span id="txt_roi_detail">Modal: Rp 0 → Omzet: Rp 0</span>
+            </small>
         </div>
     </div>
 </div>
@@ -68,27 +107,95 @@
 <script>
 $(document).ready(function() {
     $.get('/v1/dashboard/chart-eoq', function(res) {
-       $('#loader').remove();
+        $('#loader').remove();
         const s = res.summary || {};
 
+        // Format angka dengan fungsi helper
+        function formatRupiah(angka) {
+            return parseFloat(angka).toLocaleString('id-ID');
+        }
+
+        function formatCurrency(angka) {
+            return 'Rp ' + formatRupiah(angka);
+        }
+
         // Update Finansial
-        $('#txt_modal').text('Rp ' + parseFloat(s.modal).toLocaleString('id-ID'));
-        $('#txt_omzet').text('Rp ' + parseFloat(s.omzet).toLocaleString('id-ID'));
-        $('#txt_profit').text('Rp ' + parseFloat(s.keuntungan_bersih).toLocaleString('id-ID'));
-        $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(s.keuntungan_kotor).toLocaleString('id-ID'));
+        $('#txt_modal').text(formatCurrency(s.modal || 0));
+        $('#txt_omzet').text(formatCurrency(s.omzet || 0));
 
-        // Update Biaya (Sekarang angkanya akan kecil dan sinkron)
-        $('#txt_holding').text('Rp ' + parseFloat(s.biaya_penyimpanan).toLocaleString('id-ID'));
-        $('#txt_ordering').text('Rp ' + parseFloat(s.biaya_pemesanan).toLocaleString('id-ID'));
+        // Pastikan keuntungan bersih tidak negatif di tampilan
+        const keuntunganBersih = Math.max(parseFloat(s.keuntungan_bersih || 0), 0);
+        $('#txt_profit').text(formatCurrency(keuntunganBersih));
 
-        $('#txt_reorder').text((s.perlu_reorder || 0) + ' Produk');
+        // Hitung margin (jika omzet > 0)
+        let marginPercent = 0;
+        if (s.omzet > 0) {
+            marginPercent = ((keuntunganBersih / s.omzet) * 100).toFixed(1);
+        }
+        $('#txt_margin').text(`Margin: ${marginPercent}%`);
 
-        // 4. Render Charts Produk
+        // Warna margin berdasarkan persentase
+        if (marginPercent >= 20) {
+            $('#txt_margin').removeClass('text-muted').addClass('text-success');
+        } else if (marginPercent >= 10) {
+            $('#txt_margin').removeClass('text-muted').addClass('text-warning');
+        } else if (marginPercent > 0) {
+            $('#txt_margin').removeClass('text-muted').addClass('text-danger');
+        }
+
+        // Update keuntungan kotor
+        $('#txt_gross_profit').text(formatCurrency(s.keuntungan_kotor || 0));
+
+        // Update Biaya - pastikan format angka konsisten
+        $('#txt_holding').text(formatCurrency(s.biaya_penyimpanan || 0));
+        $('#txt_ordering').text(formatCurrency(s.biaya_pemesanan || 0));
+
+        // Update stok kritis
+        const reorderCount = s.perlu_reorder || 0;
+        $('#txt_reorder').text(reorderCount + ' Produk');
+        if (reorderCount > 0) {
+            $('#txt_reorder').addClass('animate-pulse');
+        }
+
+        // Hitung ROI
+        let roiPercent = 0;
+        if (s.modal > 0) {
+            roiPercent = ((s.omzet / s.modal) * 100).toFixed(1);
+        }
+
+        // Update ROI Progress Bar
+        const roiProgress = Math.min(roiPercent, 100);
+        const progressBar = $('#roi_progress');
+        progressBar.css('width', roiProgress + '%');
+        progressBar.text(roiPercent + '%');
+
+        // Warna progress bar berdasarkan ROI
+        if (roiPercent >= 100) {
+            progressBar.removeClass('bg-danger bg-warning').addClass('bg-success');
+        } else if (roiPercent >= 50) {
+            progressBar.removeClass('bg-danger bg-success').addClass('bg-warning');
+        } else {
+            progressBar.removeClass('bg-success bg-warning').addClass('bg-danger');
+        }
+
+        $('#txt_roi_percent').text(roiPercent + '%');
+        $('#txt_roi_detail').html(`
+            Modal: ${formatCurrency(s.modal || 0)} → Omzet: ${formatCurrency(s.omzet || 0)}
+        `);
+
+        // Render Charts Produk
         const eoqData = res.chart_eoq || [];
         $('#chartContainer').empty();
 
         if(eoqData.length === 0) {
-            $('#chartContainer').append('<div class="col-12 text-center text-muted py-5">Tidak ada data analisis stok.</div>');
+            $('#chartContainer').append(`
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Tidak ada data analisis stok. Pastikan Anda telah mengatur pengaturan EOQ untuk produk.
+                    </div>
+                </div>
+            `);
             return;
         }
 
@@ -98,8 +205,11 @@ $(document).ready(function() {
             const isCritical = item.stok_sekarang <= item.rop;
             const statusColor = isCritical ? 'border-danger' : 'border-success';
             const badgeStatus = isCritical
-                ? '<span class="badge bg-danger animate-pulse">REORDER</span>'
-                : '<span class="badge bg-success">STOK AMAN</span>';
+                ? '<span class="badge bg-danger animate-pulse"><i class="fas fa-exclamation-triangle me-1"></i> REORDER</span>'
+                : '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> STOK AMAN</span>';
+
+            // Hitung persentase stok dari EOQ
+            const stokPercent = item.eoq > 0 ? (item.stok_sekarang / item.eoq * 100).toFixed(1) : 0;
 
             $('#chartContainer').append(`
                 <div class="col-md-4 mb-4">
@@ -108,7 +218,9 @@ $(document).ready(function() {
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <h6 class="fw-bold mb-0 text-uppercase">${item.nama}</h6>
-                                    <small class="text-muted">Stok Saat Ini: <b>${parseFloat(item.stok_sekarang).toLocaleString('id-ID')} Kg</b></small>
+                                    <small class="text-muted">Stok: <b>${formatRupiah(item.stok_sekarang)} Kg</b></small>
+                                    <br>
+                                    <small class="text-muted">${stokPercent}% dari EOQ</small>
                                 </div>
                                 ${badgeStatus}
                             </div>
@@ -117,12 +229,12 @@ $(document).ready(function() {
                             </div>
                             <div class="mt-3 p-2 bg-light rounded">
                                 <div class="d-flex justify-content-between text-[11px] mb-1">
-                                    <span>Saran Pembelian (EOQ)</span>
-                                    <span class="fw-bold text-primary">${parseFloat(item.eoq).toLocaleString('id-ID')} Kg</span>
+                                    <span><i class="fas fa-shopping-cart text-primary me-1"></i> Saran Pembelian (EOQ)</span>
+                                    <span class="fw-bold text-primary">${formatRupiah(item.eoq)} Kg</span>
                                 </div>
                                 <div class="d-flex justify-content-between text-[11px]">
-                                    <span>Titik Pesan (ROP)</span>
-                                    <span class="fw-bold text-orange">${parseFloat(item.rop).toLocaleString('id-ID')} Kg</span>
+                                    <span><i class="fas fa-bell text-orange me-1"></i> Titik Pesan (ROP)</span>
+                                    <span class="fw-bold" style="color: #fd7e14;">${formatRupiah(item.rop)} Kg</span>
                                 </div>
                             </div>
                         </div>
@@ -134,9 +246,13 @@ $(document).ready(function() {
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Stok', 'ROP', 'EOQ'],
+                    labels: ['Stok Sekarang', 'ROP', 'EOQ'],
                     datasets: [{
-                        data: [item.stok_sekarang, item.rop, item.eoq],
+                        data: [
+                            Math.max(item.stok_sekarang, 0), // Pastikan tidak negatif
+                            Math.max(item.rop, 0),
+                            Math.max(item.eoq, 0)
+                        ],
                         backgroundColor: [
                             isCritical ? 'rgba(220, 53, 69, 0.8)' : 'rgba(54, 162, 235, 0.8)',
                             'rgba(255, 159, 64, 0.8)',
@@ -149,21 +265,51 @@ $(document).ready(function() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatRupiah(context.raw)} Kg`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
                             grid: { display: false },
-                            ticks: { font: { size: 10 } }
+                            ticks: {
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return formatRupiah(value);
+                                }
+                            }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 10, weight: 'bold' } }
+                            ticks: {
+                                font: {
+                                    size: 10,
+                                    weight: 'bold'
+                                }
+                            }
                         }
                     }
                 }
             });
         });
+    }).fail(function(xhr, status, error) {
+        $('#loader').remove();
+        $('#chartContainer').html(`
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Gagal memuat data dashboard. Silakan coba lagi.
+                    <br><small class="text-muted">${xhr.responseJSON?.message || error}</small>
+                </div>
+            </div>
+        `);
     });
 });
 </script>

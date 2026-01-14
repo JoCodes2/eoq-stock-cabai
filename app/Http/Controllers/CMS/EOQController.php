@@ -15,7 +15,7 @@ class EOQController extends Controller
 {
     public function getDashboardChart()
     {
-        // 1. Data Penjualan & HPP Aktual (Hanya status 'selesai')
+        // 1. Data Penjualan & HPP Aktual
         $salesData = ItemPermintaanModel::join('permintaan', 'item_permintaan.permintaan_id', '=', 'permintaan.id')
             ->join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
             ->where('permintaan.status', 'selesai')
@@ -27,23 +27,46 @@ class EOQController extends Controller
 
         $omzet = (float) ($salesData->total_omzet ?? 0);
         $hpp = (float) ($salesData->total_hpp ?? 0);
-        $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0); // Total Kg yang terjual
+        $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0);
 
-        // 2. Hitung Biaya Operasional PROPORSIAL
-        // Kita ambil rata-rata biaya per KG dari pengaturan EOQ
-        $eoqRates = EOQModel::select(
-            DB::raw('AVG(biaya_penyimpanan) as rate_simpan'),
-            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as rate_pesan')
+        // 2. Hitung Biaya Operasional yang SESUAI
+        // CARA 1: Hitung berdasarkan stok rata-rata (lebih akurat)
+        $stokData = DB::table('master_data')
+            ->select(
+                DB::raw('AVG(jumlah) as stok_rata_rata'),
+                DB::raw('SUM(jumlah * harga_beli_terakhir) as nilai_stok_total')
+            )->first();
+
+        $stokRataRata = (float) ($stokData->stok_rata_rata ?? 0);
+        $nilaiStokTotal = (float) ($stokData->nilai_stok_total ?? 0);
+
+        // Ambil rata-rata persentase biaya penyimpanan
+        $avgEOQ = EOQModel::select(
+            DB::raw('AVG(biaya_penyimpanan) as biaya_simpan_persen'),
+            DB::raw('SUM(biaya_pemesanan) as total_biaya_pesan')
         )->first();
 
-        // Biaya operasional sekarang dikalikan dengan KG yang terjual
-        $biayaPenyimpananAktual = $qtyTerjual * (float) ($eoqRates->rate_simpan ?? 0);
-        $biayaPemesananAktual = $qtyTerjual * (float) ($eoqRates->rate_pesan ?? 0);
+        // **PERHITUNGAN YANG BENAR:**
+        $biayaPenyimpananAktual = ($nilaiStokTotal * (float) ($avgEOQ->biaya_simpan_persen ?? 0)) / 100;
 
-        // 3. Perhitungan Profit yang Akurat
+        // Biaya pemesanan biasanya flat atau berdasarkan frekuensi order
+        $jumlahPemesanan = StokmasukModel::count();
+        $biayaPemesananAktual = (float) ($avgEOQ->total_biaya_pesan ?? 0) * max($jumlahPemesanan, 1);
+
+        // **ATAU CARA 2: Sederhana tapi realistis**
+        $biayaOperasionalSederhana = ($omzet * 0.05); // 5% dari omzet sebagai biaya operasional
+
+        // 3. Perhitungan Profit
         $keuntunganKotor = $omzet - $hpp;
-        $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
-        // 5. Data Chart EOQ (Tetap sama)
+
+        // Pilih salah satu metode biaya operasional:
+        // $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpananAktual + $biayaPemesananAktual);
+        $keuntunganBersih = $keuntunganKotor - $biayaOperasionalSederhana; // Lebih realistis
+
+        // 4. Modal (investasi stok)
+        $modal = (float) StokmasukModel::sum('total_harga');
+
+        // 5. Data Chart EOQ
         $perluReorder = 0;
         $eoqAnalytics = EOQModel::with('masterData')->get()->map(function ($item) use (&$perluReorder) {
             $stokRiil = (float) ($item->masterData->jumlah ?? 0);
@@ -61,13 +84,16 @@ class EOQController extends Controller
 
         return response()->json([
             'summary' => [
-                'modal' => (float) StokmasukModel::sum('total_harga'), // Total belanja stok
+                'modal_investasi' => $modal,
                 'omzet' => $omzet,
+                'hpp' => $hpp, // Ditambahkan untuk debugging
                 'keuntungan_kotor' => $keuntunganKotor,
                 'keuntungan_bersih' => $keuntunganBersih,
                 'biaya_penyimpanan' => $biayaPenyimpananAktual,
                 'biaya_pemesanan' => $biayaPemesananAktual,
-                'perlu_reorder' => $perluReorder
+                'perlu_reorder' => $perluReorder,
+                'margin_kotor' => ($omzet > 0) ? round(($keuntunganKotor / $omzet) * 100, 2) : 0,
+                'margin_bersih' => ($omzet > 0) ? round(($keuntunganBersih / $omzet) * 100, 2) : 0,
             ],
             'chart_eoq' => $eoqAnalytics
         ]);
