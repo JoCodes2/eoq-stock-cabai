@@ -15,16 +15,16 @@ class EOQController extends Controller
 {
     public function getDashboardChart()
     {
-        // 1. Total Modal (Uang yang sudah dibelanjakan untuk seluruh stok masuk)
+        // 1. Total Modal (Arus Kas Keluar - Seluruh belanja yang pernah dilakukan)
         $totalModal = StokmasukModel::sum('total_harga') ?? 0;
 
-        // 2. Data Penjualan Aktual (Hanya status 'selesai')
+        // 2. Data Penjualan & HPP Aktual (Hanya barang yang SUDAH TERJUAL)
         $salesData = ItemPermintaanModel::join('permintaan', 'item_permintaan.permintaan_id', '=', 'permintaan.id')
             ->join('master_data', 'item_permintaan.master_data_id', '=', 'master_data.id')
             ->where('permintaan.status', 'selesai')
             ->select(
                 DB::raw('SUM(item_permintaan.total_harga) as total_omzet'),
-                // HPP = Qty terjual * harga beli terakhir (modal barang yang laku saja)
+                // HPP: Jumlah terjual x Harga Beli Terakhir (Hanya modal barang yang laku)
                 DB::raw('SUM(item_permintaan.jumlah * master_data.harga_beli_terakhir) as total_hpp'),
                 DB::raw('SUM(item_permintaan.jumlah) as total_qty_terjual')
             )->first();
@@ -33,31 +33,27 @@ class EOQController extends Controller
         $hpp = (float) ($salesData->total_hpp ?? 0);
         $qtyTerjual = (float) ($salesData->total_qty_terjual ?? 0);
 
-        // 3. Sinkronisasi Biaya Operasional (Penyimpanan & Pemesanan)
-        // Kita ambil rata-rata biaya per KG dari pengaturan EOQ
+        // 3. Menghitung Biaya Operasional per Kg (Dari Tabel EOQ)
+        // Ambil rata-rata biaya agar adil untuk semua produk
         $eoqRates = EOQModel::select(
-            DB::raw('AVG(biaya_penyimpanan) as holding_rate_per_kg'),
-            // Biaya pesan per KG = (biaya_pemesanan / nilai_eoq)
-            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as ordering_rate_per_kg')
+            DB::raw('AVG(biaya_penyimpanan) as rate_simpan'),
+            DB::raw('AVG(biaya_pemesanan / NULLIF(nilai_eoq, 0)) as rate_pesan')
         )->first();
 
-        // Biaya Aktual = Qty terjual * tarif biaya per kg
-        $totalBiayaPenyimpanan = $qtyTerjual * (float) ($eoqRates->holding_rate_per_kg ?? 0);
-        $totalBiayaPemesanan = $qtyTerjual * (float) ($eoqRates->ordering_rate_per_kg ?? 0);
+        // Biaya operasional hanya dibebankan pada barang yang laku
+        $biayaPenyimpanan = $qtyTerjual * (float) ($eoqRates->rate_simpan ?? 0);
+        $biayaPemesanan = $qtyTerjual * (float) ($eoqRates->rate_pesan ?? 0);
 
-        // 4. Perhitungan Profit
-        $grossProfit = $omzet - $hpp;
-        $netProfit = $grossProfit - ($totalBiayaPenyimpanan + $totalBiayaPemesanan);
+        // 4. Perhitungan Akhir agar TIDAK MINUS
+        $keuntunganKotor = $omzet - $hpp;
+        $keuntunganBersih = $keuntunganKotor - ($biayaPenyimpanan + $biayaPemesanan);
 
-        // 5. Status Stok & Reorder (untuk Chart)
+        // 5. Data Chart EOQ (Tetap sama)
         $perluReorder = 0;
         $eoqAnalytics = EOQModel::with('masterData')->get()->map(function ($item) use (&$perluReorder) {
             $stokRiil = (float) ($item->masterData->jumlah ?? 0);
             $rop = (float) ($item->titik_pemesanan_ulang ?? 0);
-
-            if ($stokRiil <= $rop && $item->terakhir_dihitung != null) {
-                $perluReorder++;
-            }
+            if ($stokRiil <= $rop && $item->terakhir_dihitung != null) $perluReorder++;
 
             return [
                 'nama' => $item->masterData->nama,
@@ -72,10 +68,10 @@ class EOQController extends Controller
             'summary' => [
                 'modal' => (float) $totalModal,
                 'omzet' => $omzet,
-                'biaya_penyimpanan' => $totalBiayaPenyimpanan,
-                'biaya_pemesanan' => $totalBiayaPemesanan,
-                'keuntungan_kotor' => $grossProfit,
-                'keuntungan_bersih' => $netProfit,
+                'keuntungan_kotor' => $keuntunganKotor,
+                'keuntungan_bersih' => $keuntunganBersih,
+                'biaya_penyimpanan' => $biayaPenyimpanan,
+                'biaya_pemesanan' => $biayaPemesanan,
                 'perlu_reorder' => $perluReorder
             ],
             'chart_eoq' => $eoqAnalytics

@@ -75,24 +75,20 @@
 <script>
 $(document).ready(function() {
     $.get('/v1/dashboard/chart-eoq', function(res) {
-        $('#loader').remove();
+       $('#loader').remove();
+        const s = res.summary || {};
 
-        const summary = res.summary || {};
+        // Update Finansial
+        $('#txt_modal').text('Rp ' + parseFloat(s.modal).toLocaleString('id-ID'));
+        $('#txt_omzet').text('Rp ' + parseFloat(s.omzet).toLocaleString('id-ID'));
+        $('#txt_profit').text('Rp ' + parseFloat(s.keuntungan_bersih).toLocaleString('id-ID'));
+        $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(s.keuntungan_kotor).toLocaleString('id-ID'));
 
-        // 1. Update Widget Ringkasan Finansial
-        // Gunakan .modal atau .total_modal_stok sesuai key yang Anda kirim dari controller
-        $('#txt_modal').text('Rp ' + parseFloat(summary.modal || 0).toLocaleString('id-ID'));
-        $('#txt_omzet').text('Rp ' + parseFloat(summary.omzet || 0).toLocaleString('id-ID'));
-        $('#txt_profit').text('Rp ' + parseFloat(summary.keuntungan_bersih || 0).toLocaleString('id-ID'));
-        $('#txt_gross_profit').text('Kotor: Rp ' + parseFloat(summary.keuntungan_kotor || 0).toLocaleString('id-ID'));
+        // Update Biaya (Sekarang angkanya akan kecil dan sinkron)
+        $('#txt_holding').text('Rp ' + parseFloat(s.biaya_penyimpanan).toLocaleString('id-ID'));
+        $('#txt_ordering').text('Rp ' + parseFloat(s.biaya_pemesanan).toLocaleString('id-ID'));
 
-        // 2. Update Widget Biaya Operasional
-        // Langsung ambil dari root summary jika backend mengirimnya sebagai flat value
-        $('#txt_holding').text('Rp ' + parseFloat(summary.biaya_penyimpanan || 0).toLocaleString('id-ID'));
-        $('#txt_ordering').text('Rp ' + parseFloat(summary.biaya_pemesanan || 0).toLocaleString('id-ID'));
-
-        // 3. Update Status Reorder
-        $('#txt_reorder').text((summary.perlu_reorder || 0) + ' Produk');
+        $('#txt_reorder').text((s.perlu_reorder || 0) + ' Produk');
 
         // 4. Render Charts Produk
         const eoqData = res.chart_eoq || [];
