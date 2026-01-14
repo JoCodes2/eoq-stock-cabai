@@ -307,7 +307,7 @@ $(document).ready(function() {
 
         $('#txt_holding').text(formatCurrency(biayaPenyimpanan));
         addInfoTooltip($('#txt_holding'),
-            '<strong>Biaya Penyimpanan:</strong><br>Biaya untuk menyimpan stok per tahun.<br><br>' +
+            '<strong>Biaya Penyimpanan:</strong><br>Biaya untuk menyimpan stok per tahun dibagi per 12 bulan.<br><br>' +
             'Sumber: Pengaturan EOQ (Economic Order Quantity)<br>' +
             'Biasanya 15-25% dari nilai stok per tahun'
         );
