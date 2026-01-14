@@ -46,31 +46,33 @@
     </div>
 </div>
 
-<!-- Alarm System untuk Data Tidak Wajar -->
-<div id="dataWarning" class="row mb-4" style="display: none;">
+<!-- Alarm untuk Biaya Operasional Rendah -->
+<div id="costWarning" class="row mb-4" style="display: none;">
     <div class="col-12">
-        <div class="alert alert-warning border-warning">
+        <div class="alert alert-info border-info">
             <div class="d-flex align-items-center">
-                <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
+                <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
                 <div class="flex-grow-1">
-                    <h6 class="fw-bold mb-1">⚠️ PERHATIAN: Data Biaya Tidak Wajar</h6>
-                    <p class="mb-2" id="warningMessage">
-                        Terdeteksi biaya operasional yang tidak realistis. Mungkin ada kesalahan input data EOQ.
+                    <h6 class="fw-bold mb-1">ℹ️ INFORMASI: Biaya Operasional Rendah</h6>
+                    <p class="mb-2" id="costWarningMessage">
+                        Biaya operasional Anda sangat rendah dibandingkan skala bisnis.
                     </p>
                     <div class="row">
                         <div class="col-md-6">
-                            <small class="d-block"><strong>Kemungkinan Penyebab:</strong></small>
-                            <small class="d-block">1. Biaya penyimpanan diinput sebagai nominal bukan persentase</small>
-                            <small class="d-block">2. Nilai biaya terlalu besar untuk skala bisnis</small>
+                            <small class="d-block"><strong>Data Saat Ini:</strong></small>
+                            <small class="d-block">• Biaya Penyimpanan: Rp <span id="debug_holding">0</span>/tahun</small>
+                            <small class="d-block">• Rata-rata per produk: Rp <span id="debug_holding_per">0</span>/tahun</small>
+                            <small class="d-block">• Jumlah Produk EOQ: <span id="debug_eoq_count">0</span></small>
                         </div>
                         <div class="col-md-6">
-                            <small class="d-block"><strong>Saran Perbaikan:</strong></small>
-                            <small class="d-block">1. Periksa pengaturan EOQ di menu Master Data</small>
-                            <small class="d-block">2. Pastikan biaya penyimpanan dalam % (misal: 20 untuk 20%)</small>
+                            <small class="d-block"><strong>Rekomendasi:</strong></small>
+                            <small class="d-block">• Biaya penyimpanan biasanya 15-25% dari nilai stok</small>
+                            <small class="d-block">• Nilai stok Anda: Rp <span id="debug_stok_value">0</span></small>
+                            <small class="d-block">• Seharusnya: Rp <span id="debug_recommended">0</span>/tahun</small>
                         </div>
                     </div>
                 </div>
-                <button type="button" class="btn-close" onclick="$('#dataWarning').hide()"></button>
+                <button type="button" class="btn-close" onclick="$('#costWarning').hide()"></button>
             </div>
         </div>
     </div>
@@ -135,6 +137,37 @@
             </div>
             <small class="text-[10px] text-muted d-block mt-2">
                 <i class="fas fa-info-circle me-1"></i> Biaya Penyimpanan + Biaya Pemesanan
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Informasi Tambahan -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">RATIO MODAL/OMZET</small>
+            <h5 id="txt_modal_ratio" class="fw-bold mb-0">0%</h5>
+            <small class="text-[10px] text-muted d-block mt-2">
+                <i class="fas fa-info-circle me-1"></i> Persentase omzet terhadap modal
+            </small>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">BIAYA PENYIMPANAN/TAHUN</small>
+            <h5 id="txt_holding_yearly" class="fw-bold text-warning mb-0">Rp 0</h5>
+            <small class="text-[10px] text-muted d-block mt-2">
+                <i class="fas fa-info-circle me-1"></i> Total biaya simpan per tahun
+            </small>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm p-3">
+            <small class="text-muted fw-bold">AVG BIAYA/PRODUK</small>
+            <h5 id="txt_holding_per_product" class="fw-bold text-warning mb-0">Rp 0</h5>
+            <small class="text-[10px] text-muted d-block mt-2">
+                <i class="fas fa-info-circle me-1"></i> Rata-rata biaya simpan per produk/tahun
             </small>
         </div>
     </div>
@@ -205,6 +238,7 @@ $(document).ready(function() {
     $.get('/v1/dashboard/chart-eoq', function(res) {
         $('#loader').remove();
         const s = res.summary || {};
+        const debug = s.debug_info || {};
 
         // Format angka dengan fungsi helper
         function formatRupiah(angka) {
@@ -221,58 +255,27 @@ $(document).ready(function() {
             return 'Rp ' + formatRupiah(angka);
         }
 
-        // Fungsi untuk menambahkan tooltip info
-        function addInfoTooltip(element, message) {
-            element.attr('data-bs-toggle', 'tooltip');
-            element.attr('data-bs-placement', 'top');
-            element.attr('title', message);
-            element.attr('data-bs-html', 'true');
-            new bootstrap.Tooltip(element[0]);
-        }
-
-        // DETECT UNREALISTIC DATA
-        const hasUnrealisticData = detectUnrealisticData(s);
-        if (hasUnrealisticData.isUnrealistic) {
-            $('#dataWarning').show();
-            $('#warningMessage').html(hasUnrealisticData.message);
-        }
+        // Check for low operational costs
+        checkLowOperationalCosts(s, debug);
 
         // Update Finansial
-        const modal = s.modal_investasi || s.modal || 0;
+        const modal = s.modal_investisi || s.modal || 0;
         $('#txt_modal').text(formatCurrency(modal));
-        addInfoTooltip($('#txt_modal'),
-            '<strong>Total Modal:</strong><br>Jumlah total uang yang diinvestasikan dalam stok barang.<br><br>' +
-            'Perhitungan: Total semua pembelian stok masuk'
-        );
 
         $('#txt_omzet').text(formatCurrency(s.omzet || 0));
-        addInfoTooltip($('#txt_omzet'),
-            '<strong>Total Omzet:</strong><br>Total pendapatan dari penjualan yang sudah selesai.<br><br>' +
-            'Sumber: Hanya menghitung transaksi dengan status "SELESAI"'
-        );
 
-        // Pastikan keuntungan bersih tidak negatif di tampilan
+        // Update keuntungan bersih
         const keuntunganBersih = Math.max(parseFloat(s.keuntungan_bersih || 0), 0);
         $('#txt_profit').text(formatCurrency(keuntunganBersih));
-        addInfoTooltip($('#txt_profit'),
-            '<strong>Keuntungan Bersih:</strong><br>Keuntungan setelah dikurangi semua biaya operasional.<br><br>' +
-            'Rumus: Omzet - HPP - (Biaya Penyimpanan + Biaya Pemesanan)'
-        );
 
-        // Hitung margin (jika omzet > 0)
+        // Hitung margin
         let marginPercent = 0;
         if (s.omzet > 0) {
             marginPercent = ((keuntunganBersih / s.omzet) * 100).toFixed(2);
         }
         $('#txt_margin').text(`Margin: ${marginPercent}%`);
-        addInfoTooltip($('#txt_margin'),
-            '<strong>Margin Bersih:</strong><br>Persentase keuntungan bersih terhadap omzet.<br><br>' +
-            '<span class="text-success">≥ 20% = SANGAT BAIK</span><br>' +
-            '<span class="text-warning">10-20% = BAIK</span><br>' +
-            '<span class="text-danger">&lt; 10% = PERLU DITINGKATKAN</span>'
-        );
 
-        // Warna margin berdasarkan persentase
+        // Warna margin
         if (marginPercent >= 20) {
             $('#txt_margin').removeClass('text-muted').addClass('text-success');
         } else if (marginPercent >= 10) {
@@ -284,10 +287,6 @@ $(document).ready(function() {
         // Update keuntungan kotor
         const keuntunganKotor = s.keuntungan_kotor || 0;
         $('#txt_gross_profit').text(formatCurrency(keuntunganKotor));
-        addInfoTooltip($('#txt_gross_profit'),
-            '<strong>Keuntungan Kotor:</strong><br>Keuntungan sebelum dikurangi biaya operasional.<br><br>' +
-            'Rumus: Omzet - HPP (Harga Pokok Penjualan)'
-        );
 
         // Margin kotor
         let grossMarginPercent = 0;
@@ -295,35 +294,25 @@ $(document).ready(function() {
             grossMarginPercent = ((keuntunganKotor / s.omzet) * 100).toFixed(2);
         }
         $('#txt_gross_margin').text(`Margin Kotor: ${grossMarginPercent}%`);
-        addInfoTooltip($('#txt_gross_margin'),
-            '<strong>Margin Kotor:</strong><br>Persentase keuntungan kotor terhadap omzet.<br><br>' +
-            'Indikator efisiensi harga jual vs harga beli'
-        );
 
-        // Update Biaya - dengan persentase dari omzet
+        // Update Biaya
         const biayaPenyimpanan = parseFloat(s.biaya_penyimpanan || 0);
         const biayaPemesanan = parseFloat(s.biaya_pemesanan || 0);
         const totalBiayaOperasional = biayaPenyimpanan + biayaPemesanan;
 
         $('#txt_holding').text(formatCurrency(biayaPenyimpanan));
-        addInfoTooltip($('#txt_holding'),
-            '<strong>Biaya Penyimpanan:</strong><br>Biaya untuk menyimpan stok per tahun.<br><br>' +
-            'Sumber: Pengaturan EOQ (Economic Order Quantity)<br>' +
-            'Biasanya 15-25% dari nilai stok per tahun'
-        );
-
         $('#txt_ordering').text(formatCurrency(biayaPemesanan));
-        addInfoTooltip($('#txt_ordering'),
-            '<strong>Biaya Pemesanan:</strong><br>Biaya untuk memesan stok per transaksi.<br><br>' +
-            'Sumber: Pengaturan EOQ (Economic Order Quantity)<br>' +
-            'Termasuk: biaya admin, transportasi, dll'
-        );
-
         $('#txt_total_operational').text(formatCurrency(totalBiayaOperasional));
-        addInfoTooltip($('#txt_total_operational'),
-            '<strong>Total Biaya Operasional:</strong><br>Jumlah biaya penyimpanan + biaya pemesanan.<br><br>' +
-            'Rumus: Biaya Penyimpanan + Biaya Pemesanan'
-        );
+
+        // Update informasi tambahan
+        const modalRatio = modal > 0 ? ((s.omzet / modal) * 100).toFixed(2) : 0;
+        $('#txt_modal_ratio').text(`${modalRatio}%`);
+
+        const biayaPenyimpananTahunan = biayaPenyimpanan * 12;
+        $('#txt_holding_yearly').text(formatCurrency(biayaPenyimpananTahunan));
+
+        const avgBiayaPerProduk = debug.jumlah_produk_eoq > 0 ? (biayaPenyimpananTahunan / debug.jumlah_produk_eoq) : 0;
+        $('#txt_holding_per_product').text(formatCurrency(avgBiayaPerProduk));
 
         // Hitung persentase biaya dari omzet
         let holdingPercent = 0;
@@ -337,30 +326,10 @@ $(document).ready(function() {
         }
 
         $('#txt_holding_percent').text(`${holdingPercent}% dari Omzet`);
-        addInfoTooltip($('#txt_holding_percent'),
-            '<strong>Persentase Biaya Penyimpanan:</strong><br>Proporsi biaya penyimpanan terhadap omzet.<br><br>' +
-            'Indikator: <span class="text-success">&lt; 5% = Baik</span>, ' +
-            '<span class="text-warning">5-10% = Waspada</span>, ' +
-            '<span class="text-danger">&gt; 10% = Tidak Efisien</span>'
-        );
-
         $('#txt_ordering_percent').text(`${orderingPercent}% dari Omzet`);
-        addInfoTooltip($('#txt_ordering_percent'),
-            '<strong>Persentase Biaya Pemesanan:</strong><br>Proporsi biaya pemesanan terhadap omzet.<br><br>' +
-            'Indikator: <span class="text-success">&lt; 2% = Baik</span>, ' +
-            '<span class="text-warning">2-5% = Waspada</span>, ' +
-            '<span class="text-danger">&gt; 5% = Tidak Efisien</span>'
-        );
-
         $('#txt_total_percent').text(`${totalPercent}% dari Omzet`);
-        addInfoTooltip($('#txt_total_percent'),
-            '<strong>Persentase Total Biaya Ops:</strong><br>Proporsi total biaya operasional terhadap omzet.<br><br>' +
-            'Indikator: <span class="text-success">&lt; 7% = Sangat Efisien</span>, ' +
-            '<span class="text-warning">7-15% = Normal</span>, ' +
-            '<span class="text-danger">&gt; 15% = Perlu Evaluasi</span>'
-        );
 
-        // Warna peringatan jika persentase terlalu tinggi
+        // Warna peringatan
         const setPercentColor = (element, percent) => {
             if (percent > 10) {
                 element.removeClass('text-muted text-success').addClass('text-danger');
@@ -378,13 +347,6 @@ $(document).ready(function() {
         // Update stok kritis
         const reorderCount = s.perlu_reorder || 0;
         $('#txt_reorder').text(reorderCount + ' Produk');
-        addInfoTooltip($('#txt_reorder'),
-            '<strong>Stok Kritis (ROP):</strong><br>Jumlah produk yang mencapai titik pesan ulang.<br><br>' +
-            'ROP = Reorder Point: titik dimana stok harus dipesan ulang<br>' +
-            'Status: <span class="text-danger">REORDER</span> = Stok ≤ ROP<br>' +
-            'Status: <span class="text-success">AMAN</span> = Stok > ROP'
-        );
-
         if (reorderCount > 0) {
             $('#txt_reorder').addClass('animate-pulse');
         }
@@ -411,15 +373,6 @@ $(document).ready(function() {
         }
 
         $('#txt_roi_percent').text(roiPercent + '%');
-        addInfoTooltip($('#txt_roi_percent'),
-            '<strong>ROI (Return on Investment):</strong><br>Persentase omzet terhadap modal.<br><br>' +
-            'Rumus: (Omzet ÷ Modal) × 100%<br><br>' +
-            '<span class="text-danger">&lt; 50% = Rendah</span><br>' +
-            '<span class="text-warning">50-100% = Sedang</span><br>' +
-            '<span class="text-success">≥ 100% = Baik</span><br><br>' +
-            'ROI 100% = Modal sudah kembali'
-        );
-
         $('#txt_roi_detail').html(`
             Modal: ${formatCurrency(modal)} → Omzet: ${formatCurrency(s.omzet || 0)}
         `);
@@ -427,69 +380,58 @@ $(document).ready(function() {
         // Hitung Efisiensi Operasional
         let efisiensiPercent = 0;
         if (s.omzet > 0 && totalBiayaOperasional > 0) {
-            // Efisiensi = (1 - (biaya operasional / omzet)) * 100
             efisiensiPercent = (100 - ((totalBiayaOperasional / s.omzet) * 100)).toFixed(2);
-            efisiensiPercent = Math.max(efisiensiPercent, 0); // Tidak boleh negatif
+            efisiensiPercent = Math.max(efisiensiPercent, 0);
         }
 
         $('#txt_efisiensi_percent').text(efisiensiPercent + '%');
-        addInfoTooltip($('#txt_efisiensi_percent'),
-            '<strong>Efisiensi Operasional:</strong><br>Indikator seberapa efisien biaya operasional.<br><br>' +
-            'Rumus: 100% - (Total Biaya Ops ÷ Omzet)<br><br>' +
-            '<span class="text-danger">&lt; 85% = Tidak Efisien</span><br>' +
-            '<span class="text-warning">85-93% = Normal</span><br>' +
-            '<span class="text-success">≥ 93% = Sangat Efisien</span>'
-        );
-
         $('#efisiensi_progress').css('width', Math.min(efisiensiPercent, 100) + '%');
         $('#txt_efisiensi_detail').text(`Total Biaya Ops: ${formatCurrency(totalBiayaOperasional)}`);
 
-        // TAMPILKAN BREAKDOWN PERHITUNGAN DENGAN KETERANGAN
+        // TAMPILKAN BREAKDOWN PERHITUNGAN
         $('#breakdownContainer').html(`
             <div class="col-12">
                 <div class="card border-0 shadow-sm p-3 bg-light">
                     <h6 class="fw-bold mb-3"><i class="fas fa-calculator text-primary me-2"></i> Breakdown Perhitungan Keuntungan</h6>
                     <div class="row text-center">
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Total pendapatan dari penjualan yang sudah selesai">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">OMZET</small>
                             <div class="fw-bold text-success fs-6">${formatCurrency(s.omzet || 0)}</div>
                             <small class="text-muted">(100%)</small>
                         </div>
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Total harga pokok penjualan (biaya beli barang)">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">HPP</small>
                             <div class="fw-bold text-danger fs-6">- ${formatCurrency(s.hpp || 0)}</div>
                             <small class="text-muted">(${s.omzet > 0 ? ((s.hpp/s.omzet)*100).toFixed(1) : 0}%)</small>
                         </div>
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Keuntungan sebelum biaya operasional (Omzet - HPP)">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">KEUNTUNGAN KOTOR</small>
                             <div class="fw-bold text-info fs-6">${formatCurrency(keuntunganKotor)}</div>
                             <small class="text-muted">(${grossMarginPercent}%)</small>
                         </div>
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Biaya simpan stok per tahun (dari pengaturan EOQ)">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">BIAYA PENYIMPANAN</small>
                             <div class="fw-bold text-warning fs-6">- ${formatCurrency(biayaPenyimpanan)}</div>
                             <small class="text-muted">(${holdingPercent}%)</small>
                         </div>
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Biaya pesan stok per transaksi (dari pengaturan EOQ)">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">BIAYA PEMESANAN</small>
                             <div class="fw-bold text-orange fs-6">- ${formatCurrency(biayaPemesanan)}</div>
                             <small class="text-muted">(${orderingPercent}%)</small>
                         </div>
-                        <div class="col-md-2 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Total biaya operasional (Penyimpanan + Pemesanan)">
+                        <div class="col-md-2 mb-2">
                             <small class="text-muted d-block">TOTAL BIAYA OPS</small>
                             <div class="fw-bold text-danger fs-6">- ${formatCurrency(totalBiayaOperasional)}</div>
                             <small class="text-muted">(${totalPercent}%)</small>
                         </div>
                     </div>
                     <div class="text-center mt-3 pt-3 border-top">
-                        <div class="fw-bold text-primary fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Keuntungan akhir setelah semua pengurangan (Omzet - HPP - Total Biaya Ops)">
+                        <div class="fw-bold text-primary fs-5">
                             = KEUNTUNGAN BERSIH: ${formatCurrency(keuntunganBersih)}
                         </div>
                         <small class="text-muted">(Margin Bersih: ${marginPercent}% dari Omzet)</small>
                         <div class="mt-2">
-                            <span class="badge ${marginPercent >= 20 ? 'bg-success' : marginPercent >= 10 ? 'bg-warning' : 'bg-danger'}"
-                                  data-bs-toggle="tooltip" data-bs-placement="top"
-                                  title="${marginPercent >= 20 ? 'Margin ≥ 20%: Sangat menguntungkan' : marginPercent >= 10 ? 'Margin 10-20%: Menguntungkan' : 'Margin < 10%: Perlu evaluasi harga/biaya'}">
+                            <span class="badge ${marginPercent >= 20 ? 'bg-success' : marginPercent >= 10 ? 'bg-warning' : 'bg-danger'}">
                                 ${marginPercent >= 20 ? 'SANGAT BAIK' : marginPercent >= 10 ? 'BAIK' : 'PERLU DITINGKATKAN'}
                             </span>
                         </div>
@@ -497,9 +439,6 @@ $(document).ready(function() {
                 </div>
             </div>
         `);
-
-        // Inisialisasi tooltip untuk breakdown
-        $('[data-bs-toggle="tooltip"]').tooltip();
 
         // Render Charts Produk
         const eoqData = res.chart_eoq || [];
@@ -537,14 +476,7 @@ $(document).ready(function() {
                                     <h6 class="fw-bold mb-0 text-uppercase">${item.nama}</h6>
                                     <small class="text-muted">Stok: <b>${formatRupiah(item.stok_sekarang)} Kg</b></small>
                                     <br>
-                                    <small class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top"
-                                           title="Persentase stok saat ini terhadap jumlah optimal (EOQ)">
-                                        ${stokPercent}% dari EOQ
-                                    </small>
-                                    <small class="text-muted d-block" data-bs-toggle="tooltip" data-bs-placement="top"
-                                           title="Persentase titik pesan ulang terhadap jumlah optimal">
-                                        ROP: ${ropPercent}% dari EOQ
-                                    </small>
+                                    <small class="text-muted">${stokPercent}% dari EOQ | ROP: ${ropPercent}% dari EOQ</small>
                                 </div>
                                 ${badgeStatus}
                             </div>
@@ -552,23 +484,15 @@ $(document).ready(function() {
                                 <canvas id="${chartId}"></canvas>
                             </div>
                             <div class="mt-3 p-2 bg-light rounded">
-                                <div class="d-flex justify-content-between text-[11px] mb-1" data-bs-toggle="tooltip"
-                                     data-bs-placement="top" title="Jumlah optimal pembelian untuk minimalisasi biaya">
+                                <div class="d-flex justify-content-between text-[11px] mb-1">
                                     <span><i class="fas fa-shopping-cart text-primary me-1"></i> EOQ (Optimal)</span>
                                     <span class="fw-bold text-primary">${formatRupiah(item.eoq)} Kg</span>
                                 </div>
-                                <div class="d-flex justify-content-between text-[11px]" data-bs-toggle="tooltip"
-                                     data-bs-placement="top" title="Titik dimana stok harus dipesan ulang">
+                                <div class="d-flex justify-content-between text-[11px]">
                                     <span><i class="fas fa-bell text-orange me-1"></i> ROP (Reorder Point)</span>
                                     <span class="fw-bold" style="color: #fd7e14;">${formatRupiah(item.rop)} Kg</span>
                                 </div>
                             </div>
-                            <small class="text-[10px] text-muted mt-2 d-block">
-                                <i class="fas fa-info-circle me-1"></i>
-                                ${isCritical ?
-                                    'Stok ≤ ROP: Segera pesan ulang!' :
-                                    'Stok > ROP: Masih aman'}
-                            </small>
                         </div>
                     </div>
                 </div>
@@ -604,15 +528,6 @@ $(document).ready(function() {
                             callbacks: {
                                 label: function(context) {
                                     return `${context.dataset.label}: ${formatRupiah(context.raw)} Kg`;
-                                },
-                                afterLabel: function(context) {
-                                    if (context.label === 'Stok Sekarang') {
-                                        return `Status: ${isCritical ? 'KRITIS (≤ ROP)' : 'AMAN (> ROP)'}`;
-                                    } else if (context.label === 'ROP') {
-                                        return 'Titik pesan ulang';
-                                    } else if (context.label === 'EOQ') {
-                                        return 'Jumlah optimal pembelian';
-                                    }
                                 }
                             }
                         }
@@ -641,12 +556,6 @@ $(document).ready(function() {
                 }
             });
         });
-
-        // Inisialisasi tooltip untuk semua elemen
-        setTimeout(() => {
-            $('[data-bs-toggle="tooltip"]').tooltip();
-        }, 100);
-
     }).fail(function(xhr, status, error) {
         $('#loader').remove();
         $('#chartContainer').html(`
@@ -660,61 +569,35 @@ $(document).ready(function() {
         `);
     });
 
-    // Fungsi deteksi data tidak wajar
-    function detectUnrealisticData(data) {
-        const omzet = data.omzet || 0;
-        const holdingCost = parseFloat(data.biaya_penyimpanan || 0);
-        const orderingCost = parseFloat(data.biaya_pemesanan || 0);
-        const modal = data.modal_investasi || data.modal || 0;
-        const hpp = data.hpp || 0;
+    // Fungsi untuk mengecek biaya operasional yang terlalu rendah
+    function checkLowOperationalCosts(s, debug) {
+        const biayaPenyimpananTahunan = parseFloat(debug.total_biaya_penyimpanan_tahunan || 0);
+        const nilaiStokTotal = parseFloat(debug.nilai_stok_total || 0);
+        const jumlahProduk = parseInt(debug.jumlah_produk_eoq || 0);
 
-        const issues = [];
+        // Hitung rekomendasi biaya penyimpanan (15-25% dari nilai stok)
+        const rekomendasiMin = nilaiStokTotal * 0.15; // 15%
+        const rekomendasiMax = nilaiStokTotal * 0.25; // 25%
+        const rekomendasiRata = (rekomendasiMin + rekomendasiMax) / 2;
 
-        // 1. Biaya penyimpanan > 30% omzet (tidak wajar)
-        if (omzet > 0 && holdingCost > 0) {
-            const holdingPercent = (holdingCost / omzet) * 100;
-            if (holdingPercent > 30) {
-                issues.push(`Biaya penyimpanan (${holdingPercent.toFixed(2)}% dari omzet) tidak wajar. Seharusnya < 10%`);
-            }
+        // Tampilkan warning jika biaya terlalu rendah
+        if (biayaPenyimpananTahunan > 0 && rekomendasiRata > 0 &&
+            biayaPenyimpananTahunan < rekomendasiMin * 0.1) { // Kurang dari 10% dari minimum
+
+            $('#debug_holding').text(formatRupiah(biayaPenyimpananTahunan));
+            $('#debug_holding_per').text(formatRupiah(debug.avg_biaya_penyimpanan_per_produk || 0));
+            $('#debug_eoq_count').text(jumlahProduk);
+            $('#debug_stok_value').text(formatRupiah(nilaiStokTotal));
+            $('#debug_recommended').text(formatRupiah(rekomendasiRata));
+
+            $('#costWarningMessage').html(`
+                Biaya penyimpanan Anda (Rp ${formatRupiah(biayaPenyimpananTahunan)}/tahun)
+                sangat rendah dibandingkan nilai stok (Rp ${formatRupiah(nilaiStokTotal)}).
+                <br>Untuk akurasi EOQ, biaya penyimpanan seharusnya sekitar 15-25% dari nilai stok.
+            `);
+
+            $('#costWarning').show();
         }
-
-        // 2. Biaya penyimpanan > biaya pemesanan 100x (tidak seimbang)
-        if (holdingCost > 0 && orderingCost > 0 && holdingCost > orderingCost * 100) {
-            issues.push(`Biaya penyimpanan terlalu besar dibanding biaya pemesanan`);
-        }
-
-        // 3. Omzet terlalu kecil dibanding modal (turnover rendah)
-        if (modal > 0 && omzet > 0) {
-            const turnover = (omzet / modal) * 100;
-            if (turnover < 10) { // Kurang dari 10% ROI
-                issues.push(`ROI rendah (${turnover.toFixed(1)}%), modal tidak efisien`);
-            }
-        }
-
-        // 4. Total biaya > keuntungan kotor
-        const totalCost = holdingCost + orderingCost;
-        const grossProfit = data.keuntungan_kotor || 0;
-        if (totalCost > grossProfit) {
-            issues.push(`Total biaya operasional melebihi keuntungan kotor`);
-        }
-
-        // 5. HPP > Omzet (tidak mungkin)
-        if (hpp > omzet && omzet > 0) {
-            issues.push(`HPP (${formatCurrency(hpp)}) melebihi Omzet (${formatCurrency(omzet)})`);
-        }
-
-        if (issues.length > 0) {
-            return {
-                isUnrealistic: true,
-                message: issues.join('<br>')
-            };
-        }
-
-        return { isUnrealistic: false, message: '' };
-    }
-
-    function formatCurrency(num) {
-        return 'Rp ' + parseFloat(num || 0).toLocaleString('id-ID');
     }
 });
 </script>
