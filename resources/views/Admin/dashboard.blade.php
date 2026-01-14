@@ -66,7 +66,7 @@
 
 <!-- Ringkasan Keuntungan -->
 <div class="row mb-4">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -78,7 +78,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3 bg-light">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -90,7 +90,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card border-0 shadow-sm p-3 bg-light">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -102,6 +102,23 @@
             </div>
         </div>
     </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted fw-bold">TOTAL BIAYA OPS</small>
+                    <h5 id="txt_total_operational" class="fw-bold text-danger mb-0">Rp 0</h5>
+                    <small id="txt_total_percent" class="text-[10px] text-muted">0% dari Omzet</small>
+                </div>
+                <i class="fas fa-calculator fa-2x text-danger opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Breakdown Perhitungan -->
+<div class="row mb-4" id="breakdownContainer">
+    <!-- Akan diisi oleh JavaScript -->
 </div>
 
 <!-- Progress Bar ROI & Efisiensi -->
@@ -161,7 +178,13 @@ $(document).ready(function() {
 
         // Format angka dengan fungsi helper
         function formatRupiah(angka) {
-            return parseFloat(angka).toLocaleString('id-ID');
+            if (angka === null || angka === undefined) return '0';
+            const num = parseFloat(angka);
+            if (isNaN(num)) return '0';
+            return num.toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
         }
 
         function formatCurrency(angka) {
@@ -176,7 +199,8 @@ $(document).ready(function() {
         }
 
         // Update Finansial
-        $('#txt_modal').text(formatCurrency(s.modal_investasi || s.modal || 0));
+        const modal = s.modal_investasi || s.modal || 0;
+        $('#txt_modal').text(formatCurrency(modal));
         $('#txt_omzet').text(formatCurrency(s.omzet || 0));
 
         // Pastikan keuntungan bersih tidak negatif di tampilan
@@ -186,7 +210,7 @@ $(document).ready(function() {
         // Hitung margin (jika omzet > 0)
         let marginPercent = 0;
         if (s.omzet > 0) {
-            marginPercent = ((keuntunganBersih / s.omzet) * 100).toFixed(1);
+            marginPercent = ((keuntunganBersih / s.omzet) * 100).toFixed(2);
         }
         $('#txt_margin').text(`Margin: ${marginPercent}%`);
 
@@ -200,45 +224,54 @@ $(document).ready(function() {
         }
 
         // Update keuntungan kotor
-        $('#txt_gross_profit').text(formatCurrency(s.keuntungan_kotor || 0));
+        const keuntunganKotor = s.keuntungan_kotor || 0;
+        $('#txt_gross_profit').text(formatCurrency(keuntunganKotor));
 
         // Margin kotor
         let grossMarginPercent = 0;
-        if (s.omzet > 0 && s.keuntungan_kotor) {
-            grossMarginPercent = ((s.keuntungan_kotor / s.omzet) * 100).toFixed(1);
+        if (s.omzet > 0 && keuntunganKotor) {
+            grossMarginPercent = ((keuntunganKotor / s.omzet) * 100).toFixed(2);
         }
         $('#txt_gross_margin').text(`Margin Kotor: ${grossMarginPercent}%`);
 
         // Update Biaya - dengan persentase dari omzet
-        const biayaPenyimpanan = s.biaya_penyimpanan || 0;
-        const biayaPemesanan = s.biaya_pemesanan || 0;
+        const biayaPenyimpanan = parseFloat(s.biaya_penyimpanan || 0);
+        const biayaPemesanan = parseFloat(s.biaya_pemesanan || 0);
+        const totalBiayaOperasional = biayaPenyimpanan + biayaPemesanan;
 
         $('#txt_holding').text(formatCurrency(biayaPenyimpanan));
         $('#txt_ordering').text(formatCurrency(biayaPemesanan));
+        $('#txt_total_operational').text(formatCurrency(totalBiayaOperasional));
 
         // Hitung persentase biaya dari omzet
         let holdingPercent = 0;
         let orderingPercent = 0;
+        let totalPercent = 0;
+
         if (s.omzet > 0) {
-            holdingPercent = ((biayaPenyimpanan / s.omzet) * 100).toFixed(1);
-            orderingPercent = ((biayaPemesanan / s.omzet) * 100).toFixed(1);
+            holdingPercent = ((biayaPenyimpanan / s.omzet) * 100).toFixed(4);
+            orderingPercent = ((biayaPemesanan / s.omzet) * 100).toFixed(3);
+            totalPercent = ((totalBiayaOperasional / s.omzet) * 100).toFixed(4);
         }
 
         $('#txt_holding_percent').text(`${holdingPercent}% dari Omzet`);
         $('#txt_ordering_percent').text(`${orderingPercent}% dari Omzet`);
+        $('#txt_total_percent').text(`${totalPercent}% dari Omzet`);
 
         // Warna peringatan jika persentase terlalu tinggi
-        if (holdingPercent > 10) {
-            $('#txt_holding_percent').removeClass('text-muted').addClass('text-danger');
-        } else if (holdingPercent > 5) {
-            $('#txt_holding_percent').removeClass('text-muted').addClass('text-warning');
-        }
+        const setPercentColor = (element, percent) => {
+            if (percent > 10) {
+                element.removeClass('text-muted').addClass('text-danger');
+            } else if (percent > 5) {
+                element.removeClass('text-muted').addClass('text-warning');
+            } else if (percent > 0) {
+                element.removeClass('text-muted').addClass('text-success');
+            }
+        };
 
-        if (orderingPercent > 5) {
-            $('#txt_ordering_percent').removeClass('text-muted').addClass('text-danger');
-        } else if (orderingPercent > 2) {
-            $('#txt_ordering_percent').removeClass('text-muted').addClass('text-warning');
-        }
+        setPercentColor($('#txt_holding_percent'), parseFloat(holdingPercent));
+        setPercentColor($('#txt_ordering_percent'), parseFloat(orderingPercent));
+        setPercentColor($('#txt_total_percent'), parseFloat(totalPercent));
 
         // Update stok kritis
         const reorderCount = s.perlu_reorder || 0;
@@ -249,9 +282,8 @@ $(document).ready(function() {
 
         // Hitung ROI
         let roiPercent = 0;
-        const modal = s.modal_investasi || s.modal || 0;
         if (modal > 0 && s.omzet > 0) {
-            roiPercent = ((s.omzet / modal) * 100).toFixed(1);
+            roiPercent = ((s.omzet / modal) * 100).toFixed(2);
         }
 
         // Update ROI Progress Bar
@@ -276,16 +308,65 @@ $(document).ready(function() {
 
         // Hitung Efisiensi Operasional
         let efisiensiPercent = 0;
-        const totalBiayaOperasional = biayaPenyimpanan + biayaPemesanan;
         if (s.omzet > 0 && totalBiayaOperasional > 0) {
             // Efisiensi = (1 - (biaya operasional / omzet)) * 100
-            efisiensiPercent = (100 - ((totalBiayaOperasional / s.omzet) * 100)).toFixed(1);
+            efisiensiPercent = (100 - ((totalBiayaOperasional / s.omzet) * 100)).toFixed(2);
             efisiensiPercent = Math.max(efisiensiPercent, 0); // Tidak boleh negatif
         }
 
         $('#txt_efisiensi_percent').text(efisiensiPercent + '%');
         $('#efisiensi_progress').css('width', Math.min(efisiensiPercent, 100) + '%');
-        $('#txt_efisiensi_detail').text(`Biaya Operasional: ${formatCurrency(totalBiayaOperasional)}`);
+        $('#txt_efisiensi_detail').text(`Total Biaya Ops: ${formatCurrency(totalBiayaOperasional)}`);
+
+        // TAMPILKAN BREAKDOWN PERHITUNGAN
+        $('#breakdownContainer').html(`
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-3 bg-light">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-calculator text-primary me-2"></i> Breakdown Perhitungan Keuntungan</h6>
+                    <div class="row text-center">
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">OMZET</small>
+                            <div class="fw-bold text-success fs-6">${formatCurrency(s.omzet || 0)}</div>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">HPP</small>
+                            <div class="fw-bold text-danger fs-6">- ${formatCurrency(s.hpp || 0)}</div>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">KEUNTUNGAN KOTOR</small>
+                            <div class="fw-bold text-info fs-6">${formatCurrency(keuntunganKotor)}</div>
+                            <small class="text-muted">(${grossMarginPercent}%)</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">BIAYA PENYIMPANAN</small>
+                            <div class="fw-bold text-warning fs-6">- ${formatCurrency(biayaPenyimpanan)}</div>
+                            <small class="text-muted">(${holdingPercent}%)</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">BIAYA PEMESANAN</small>
+                            <div class="fw-bold text-orange fs-6">- ${formatCurrency(biayaPemesanan)}</div>
+                            <small class="text-muted">(${orderingPercent}%)</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <small class="text-muted d-block">TOTAL BIAYA OPS</small>
+                            <div class="fw-bold text-danger fs-6">- ${formatCurrency(totalBiayaOperasional)}</div>
+                            <small class="text-muted">(${totalPercent}%)</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3 pt-3 border-top">
+                        <div class="fw-bold text-primary fs-5">
+                            = KEUNTUNGAN BERSIH: ${formatCurrency(keuntunganBersih)}
+                        </div>
+                        <small class="text-muted">(Margin Bersih: ${marginPercent}% dari Omzet)</small>
+                        <div class="mt-2">
+                            <span class="badge ${marginPercent >= 20 ? 'bg-success' : marginPercent >= 10 ? 'bg-warning' : 'bg-danger'}">
+                                ${marginPercent >= 20 ? 'SANGAT BAIK' : marginPercent >= 10 ? 'BAIK' : 'PERLU DITINGKATKAN'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
 
         // Render Charts Produk
         const eoqData = res.chart_eoq || [];
@@ -305,7 +386,7 @@ $(document).ready(function() {
 
         eoqData.forEach((item, index) => {
             const chartId = `chart_item_${index}`;
-            const isCritical = item.stok_sekarang <= item.rop;
+            const isCritical = parseFloat(item.stok_sekarang) <= parseFloat(item.rop);
             const statusColor = isCritical ? 'border-danger' : 'border-success';
             const badgeStatus = isCritical
                 ? '<span class="badge bg-danger animate-pulse"><i class="fas fa-exclamation-triangle me-1"></i> REORDER</span>'
@@ -419,9 +500,10 @@ $(document).ready(function() {
     // Fungsi deteksi data tidak wajar
     function detectUnrealisticData(data) {
         const omzet = data.omzet || 0;
-        const holdingCost = data.biaya_penyimpanan || 0;
-        const orderingCost = data.biaya_pemesanan || 0;
+        const holdingCost = parseFloat(data.biaya_penyimpanan || 0);
+        const orderingCost = parseFloat(data.biaya_pemesanan || 0);
         const modal = data.modal_investasi || data.modal || 0;
+        const hpp = data.hpp || 0;
 
         const issues = [];
 
@@ -429,7 +511,7 @@ $(document).ready(function() {
         if (omzet > 0 && holdingCost > 0) {
             const holdingPercent = (holdingCost / omzet) * 100;
             if (holdingPercent > 30) {
-                issues.push(`Biaya penyimpanan (${holdingPercent.toFixed(1)}% dari omzet) tidak wajar. Seharusnya < 10%`);
+                issues.push(`Biaya penyimpanan (${holdingPercent.toFixed(2)}% dari omzet) tidak wajar. Seharusnya < 10%`);
             }
         }
 
@@ -453,6 +535,11 @@ $(document).ready(function() {
             issues.push(`Total biaya operasional melebihi keuntungan kotor`);
         }
 
+        // 5. HPP > Omzet (tidak mungkin)
+        if (hpp > omzet && omzet > 0) {
+            issues.push(`HPP (${formatCurrency(hpp)}) melebihi Omzet (${formatCurrency(omzet)})`);
+        }
+
         if (issues.length > 0) {
             return {
                 isUnrealistic: true,
@@ -461,6 +548,10 @@ $(document).ready(function() {
         }
 
         return { isUnrealistic: false, message: '' };
+    }
+
+    function formatCurrency(num) {
+        return 'Rp ' + parseFloat(num || 0).toLocaleString('id-ID');
     }
 });
 </script>
